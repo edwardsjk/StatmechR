@@ -1,0 +1,10 @@
+Package: StatmechR
+Title: Implement the StatMech Approach to ID Forecasting
+Version: 0.0.0.9
+Authors@R: 
+    person("Jessie", "Edwards", , "jessedwards@unc.edu", role = c("aut", "cre"))
+Description: This package implements merges statistical and mechanistic models to estimate the number of cases remaining by geographic location in an infection disease outbreak
+License: `use_gpl3_license()`
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.0
