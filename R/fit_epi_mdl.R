@@ -13,7 +13,7 @@ fit_epi_mdl <- function (ecs, epi_mdl_func, epi_mdl_pars, error_func, ...) {
     
     ##' takes in the parameter set and the epidemic curve
     obj_fxn <- function(par, ec) {
-        pred_curve <- epi_mdl_func(par, length(data))
+        pred_curve <- epi_mdl_func(par, length(ec))
         err <- error_func(pred_curve, ec, ...)
         return(error)
     }
