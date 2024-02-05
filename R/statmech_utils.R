@@ -179,7 +179,6 @@ stat.mdl.sl.pred.ex <- function(mdl, x, tau) {
 ##'               - K: the projected fornal sizes
 ##'               - prev.mdl : the previous model. should behave when this is null
 ##' @param stat.mdl.pred: a function that takes in a statisitcal model and returns a vector of predicted final sizes
-##' @param epi.mdl.pred: a fuctnion that takes in the epdiemic model and and returns a vector of predicted final sizes
 ##' @param max.iter the maximum number of iterations to run
 ##' @param threshold the desired precision of the putput
 ##'
