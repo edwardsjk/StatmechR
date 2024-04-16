@@ -265,7 +265,7 @@ epiInf.EM <- function (epi.curves, x, starting.K,
 ##' @param error_func the error function we are trying to minimze
 ##' @param priorfunc prior function used to penalize estimates
 ##' @param prior a vector of prior values
-##'
+##' @export
 ##' @return a data frame with the epidemic model parameters and the covergence result. # nolint
 
 fit_epi_beta <- function(ecs, epi_mdl_func, epi_mdl_pars,
@@ -325,6 +325,7 @@ normmdl <- function(par, times) {
 ##' @param ec a vector of case counts
 ##' @param pred a vector of predictions
 ##' @param estK estimated final size
+##' @export
 ##' @return log probability under poisson error structure
 
 poisson_error <- function(ec, pred, estK) {
@@ -335,7 +336,7 @@ poisson_error <- function(ec, pred, estK) {
 
 ##' a function to stabilize poisson error function
 ##' built in a and currently NOT USED
-##'
+##' @export
 stabfunc <- function(estK) {
   stab <- dnorm(log10(estK), 0, 1, log = TRUE)
   return(stab)
@@ -345,6 +346,7 @@ stabfunc <- function(estK) {
 ##' @param estK estimated final size
 ##' @param prior prior estimate of final size
 ##' @return log probability to be added to error function as a penalty
+##' @export
 sqrtpen <- function(estK, prior) {
   penalty <- dnorm(sqrt(abs((estK) - prior)), 0, 1, log = TRUE)
   return(penalty)
@@ -355,6 +357,7 @@ sqrtpen <- function(estK, prior) {
 ##' @param estK estimated final size
 ##' @param prior prior estimate of final size
 ##' @return log probability to be added to error function as a penalty
+##' @export
 sqrtpen_diffuse <- function(estK, prior) {
   penalty <- dnorm(sqrt(abs((estK) - prior)), 0, 2, log = TRUE)
   return(penalty)
@@ -365,6 +368,7 @@ sqrtpen_diffuse <- function(estK, prior) {
 ##' @param estK estimated final size
 ##' @param prior prior estimate of final size
 ##' @return log probability to be added to error function as a penalty
+##' @export
 normpen <- function(estK, prior) {
   penalty <- dnorm((abs((estK) - prior)), 0, 1, log = TRUE)
   return(penalty)
@@ -374,6 +378,7 @@ normpen <- function(estK, prior) {
 ##' @param estK estimated final size
 ##' @param prior prior estimate of final size
 ##' @return log probability to be added to error function as a penalty
+##' @export
 poispen <- function(estK, prior) {
   penalty <- dpois(round(estK), prior, log = TRUE)
   return(penalty)
@@ -386,6 +391,7 @@ poispen <- function(estK, prior) {
 ##' @param penaltyfunc choice of penalty function
 ##' @param priorval vector of prior values
 ##' @return a dataframe with normal model parameters and convergence result
+##' @export
 
 normfit_em <- function(ecs, strt_vals, errorfxn, penaltyfunc, priorval) {
   normfit <- fit_epi_beta(ecs, normmdl, strt_vals, poisson_error,
@@ -407,6 +413,7 @@ normfit_em <- function(ecs, strt_vals, errorfxn, penaltyfunc, priorval) {
 ##' @param max.iter maximum number of interations
 ##' @return list of estimated final size K, Khist, Kstat, Kstathist,
 ##'         and parameters of the epi mdl
+##' @export
 
 em_func <- function(epi_curves, covdat, initK,
                     epimdlfit, starting_vals, error_func, penalty_func,
@@ -468,6 +475,7 @@ em_func <- function(epi_curves, covdat, initK,
 ##' @param x the data frame of covariates to fit based on
 ##' @param y outcome
 ##' @return a fit superlearner model
+##' @export
 ##'
 stat.mdl.sl.fit <- function(x, y) {
   require(SuperLearner)
@@ -485,6 +493,7 @@ stat.mdl.sl.fit <- function(x, y) {
 ##' @param mdl the fit model
 ##'
 ##' @return a vector of predicted final sizes
+##' @export
 ##'
 stat.mdl.sl.pred <- function(mdl, x) {
   pred <- pmax(1, predict(mdl, onlySL = T, newx = x)$pred)
