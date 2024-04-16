@@ -18,7 +18,9 @@ epiInf.EM(
 \arguments{
 \item{epi.curves}{the individual epidemic curves to fit}
 
-\item{x}{data frame of covariates. First columns assumed to contain K initialized for the odel fits}
+\item{x}{data frame of covariates.}
+
+\item{starting.K}{a vector of final size estimates to use as starting values (typically results from an epidemic model alone)}
 
 \item{stat.mdl.fit}{a function that fits the statistical model with the following parameters and returns a fir model:
 - x: a data frame of covariates that must include the final size column K a}
@@ -33,8 +35,6 @@ epiInf.EM(
 \item{threshold}{the desired precision of the putput}
 
 \item{stat.mdl.pred:}{a function that takes in a statisitcal model and returns a vector of predicted final sizes}
-
-\item{epi.mdl.pred:}{a fuctnion that takes in the epdiemic model and and returns a vector of predicted final sizes}
 }
 \value{
 a vector of estimated final sizes

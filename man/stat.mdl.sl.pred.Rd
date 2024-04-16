@@ -2,19 +2,18 @@
 % Please edit documentation in R/statmech_utils.R
 \name{stat.mdl.sl.pred}
 \alias{stat.mdl.sl.pred}
-\title{Predict final sizes using SuperLearner model}
+\title{Function for doing the predict for doing the predict for the
+results from a stat.mdl.sl.fit}
 \usage{
 stat.mdl.sl.pred(mdl, x)
 }
 \arguments{
 \item{mdl}{the fit model}
-
-\item{x}{dataframe with all variables in \code{mdl}}
 }
 \value{
 a vector of predicted final sizes
 }
 \description{
-Function for predicting final epidemic sizes using results from
-stat.mdl.sl.fit
+Function for doing the predict for doing the predict for the
+results from a stat.mdl.sl.fit
 }

@@ -2,18 +2,20 @@
 % Please edit documentation in R/statmech_utils.R
 \name{stat.mdl.sl.fit}
 \alias{stat.mdl.sl.fit}
-\title{A function to fit SuperLearner to observed epidemic sizes}
+\title{Function for doing superlearner fit of the K data appropriate for
+passing in to em_func}
 \usage{
 stat.mdl.sl.fit(x, y)
 }
 \arguments{
-\item{x}{the data frame of covariates to fit based on and outcome K}
+\item{x}{the data frame of covariates to fit based on}
+
+\item{y}{outcome}
 }
 \value{
 a fit superlearner model
 }
 \description{
 Function for doing superlearner fit of the K data appropriate for
-passing in to epiInf.EM
-previously \code{stat.mdl.sl.fit.beta}
+passing in to em_func
 }

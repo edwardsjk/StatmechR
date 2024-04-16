@@ -3,6 +3,4 @@
 export(epi.mdl.normcurve.fit)
 export(epiInf.EM)
 export(epimdl.norm.init)
-export(stat.mdl.sl.fit)
-export(stat.mdl.sl.pred)
 export(stat.mdl.sl.pred.ex)
