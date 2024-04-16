@@ -311,6 +311,7 @@ fit_epi_beta <- function(ecs, epi_mdl_func, epi_mdl_pars,
 ##' @param par a vector of starting values (final size, peak time, spread)
 ##' @param times a vector of times to compute predictions
 ##' @return a vector of predictions at `times`
+##' @export
 ##'
 normmdl <- function(par, times) {
   fs_i <- (par[1])
