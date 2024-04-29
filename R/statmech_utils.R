@@ -269,7 +269,7 @@ epiInf.EM <- function (epi.curves, x, starting.K,
 ##' @return a data frame with the epidemic model parameters and the covergence result. # nolint
 
 fit_epi_beta <- function(ecs, epi_mdl_func, epi_mdl_pars,
-                         error_func, priorfunc = NULL, prior = NULL) {
+                         error_func, priorfunc = NULL, prior = NULL, ...) {
   ##' takes in the parameter set and the epidemic curve
   obj_fxn <- function(par, ec, priorfunc = NULL, prior = NULL) {
     pred_curve <- epi_mdl_func(par, length(ec))
@@ -278,7 +278,7 @@ fit_epi_beta <- function(ecs, epi_mdl_func, epi_mdl_pars,
       #            # stabfunc((par[1])),
       #            priorfunc((par[1]), prior)) #, na.rm = TRUE)
       err <- error_func(ec, pred_curve, (par[1])) +
-        priorfunc((par[1]), prior)
+        priorfunc((par[1]), prior, ...)
     }
     if(is.null(priorfunc)) {
       err <- (error_func(ec, pred_curve, (par[1])))
@@ -348,8 +348,8 @@ stabfunc <- function(estK) {
 ##' @param prior prior estimate of final size
 ##' @return log probability to be added to error function as a penalty
 ##' @export
-sqrtpen <- function(estK, prior) {
-  penalty <- dnorm(sqrt(abs((estK) - prior)), 0, 1, log = TRUE)
+sqrtpen <- function(estK, prior, sd = 1) {
+  penalty <- dnorm(sqrt(abs((estK) - prior)), 0, sd, log = TRUE)
   return(penalty)
 }
 
@@ -370,8 +370,8 @@ sqrtpen_diffuse <- function(estK, prior) {
 ##' @param prior prior estimate of final size
 ##' @return log probability to be added to error function as a penalty
 ##' @export
-normpen <- function(estK, prior) {
-  penalty <- dnorm((abs((estK) - prior)), 0, 1, log = TRUE)
+normpen <- function(estK, prior, sd = 1) {
+  penalty <- dnorm((abs((estK) - prior)), 0, sd, log = TRUE)
   return(penalty)
 }
 
@@ -419,7 +419,7 @@ normfit_em <- function(ecs, strt_vals, errorfxn, penaltyfunc, priorval) {
 em_func <- function(epi_curves, covdat, initK,
                     epimdlfit, starting_vals, error_func, penalty_func,
                     statmdlfit, statmdlpred,
-                    threshold = 20, max.iter = 100) {
+                    threshold = 20, max.iter = 100, ...) {
 
   iter <- 0                   # initialize iter
   iter_diff <- 2 * threshold  # set iter_diff > threshold for first iter
@@ -448,7 +448,7 @@ em_func <- function(epi_curves, covdat, initK,
                                                   prev_epi_mdl[, 2],
                                                   prev_epi_mdl[, 3]),
                            error_func, penalty_func,
-                           priorval = Kstat[iter, ])
+                           priorval = Kstat[iter, ], ...)
     prev_epi_mdl <- fitepimdl
 
     ## Update K
