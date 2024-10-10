@@ -15,7 +15,8 @@ em_func(
   statmdlfit,
   statmdlpred,
   threshold = 20,
-  max.iter = 100
+  max.iter = 100,
+  ...
 )
 }
 \arguments{

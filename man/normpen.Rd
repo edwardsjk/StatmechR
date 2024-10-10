@@ -4,7 +4,7 @@
 \alias{normpen}
 \title{a function to make a normal penalty}
 \usage{
-normpen(estK, prior)
+normpen(estK, prior, sd = 1)
 }
 \arguments{
 \item{estK}{estimated final size}
