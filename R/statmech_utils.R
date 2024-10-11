@@ -232,7 +232,7 @@ stat.mdl.sl.fit <- function(x, y) {
   require(gam)
   require(rpart)
   require(randomForest)
-  rc <- SuperLearner(X = x, Y = y, newX = x, family = "gaussian", SL.library = c("SL.rpart", "SL.randomForest", "SL.glm", 'SL.gam')) #'SL.gam',  
+  rc <- SuperLearner(X = x, Y = y, newX = x, family = "gaussian", SL.library = c("SL.rpart", "SL.randomForest", "SL.glm", 'SL.gam')) #'SL.gam',   
   return(rc)
 }
 
