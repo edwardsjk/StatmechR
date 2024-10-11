@@ -257,7 +257,7 @@ stat.mdl.sl.pred <- function(mdl, x) {
 ##'
 ##' @return a vector of predicted final sizes
 ##' @export
-
+##' 
 stat.mdl.sl.pred.ex <- function(mdl, x, tau) {
   return(pmax(1,predict(mdl, onlySL = T, newdata = x %>% mutate(t = tau))$pred))
 }
