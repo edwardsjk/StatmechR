@@ -232,7 +232,7 @@ stat.mdl.sl.fit <- function(x, y) {
   require(gam)
   require(rpart)
   require(randomForest)
-  rc <- SuperLearner(X = x, Y = y, newX = x, family = "gaussian", SL.library = c("SL.rpart", "SL.randomForest", "SL.glm", 'SL.gam')) #'SL.gam',
+  rc <- SuperLearner(X = x, Y = y, newX = x, family = "gaussian", SL.library = c("SL.glm", 'SL.gam')) #'SL.gam', "SL.rpart", "SL.randomForest", 
   return(rc)
 }
 
@@ -248,4 +248,16 @@ stat.mdl.sl.fit <- function(x, y) {
 stat.mdl.sl.pred <- function(mdl, x) {
   pred <- pmax(1, predict(mdl, onlySL = T, newx = x)$pred)
   return(pred)
+}
+
+##'Function for doing the predict for doing the predict for the
+##' results from a stat.mdl.sl.fit.beta (with extrapolation)
+##'
+##' @param mdl the fit model
+##'
+##' @return a vector of predicted final sizes
+##' @export
+
+stat.mdl.sl.pred.ex <- function(mdl, x, tau) {
+  return(pmax(1,predict(mdl, onlySL = T, newdata = x %>% mutate(t = tau))$pred))
 }
