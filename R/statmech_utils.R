@@ -98,7 +98,7 @@ stabfunc <- function(estK) {
 ##' @return log probability to be added to error function as a penalty
 ##' @export
 sqrtpen <- function(estK, prior) {
-  penalty <- dnorm(sqrt(abs((estK) - prior)), 0, prior/100, log = TRUE)
+  penalty <- dnorm(sqrt(abs((estK) - prior)), 0, prior/1000, log = TRUE)
   return(penalty)
 }
 
