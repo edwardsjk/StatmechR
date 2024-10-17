@@ -26,8 +26,8 @@ fit_epi_beta <- function(ecs, epi_mdl_func, epi_mdl_pars,
       # err <- sum(error_func(ec, pred_curve, (par[1])),
       #            # stabfunc((par[1])),
       #            priorfunc((par[1]), prior)) #, na.rm = TRUE)
-      err <- error_func(ec, pred_curve, (par[1])) +
-        priorfunc((par[1]), prior, ...)
+      err <- sum( error_func(ec, pred_curve, (par[1])), 
+        priorfunc((par[1]), prior, ...), na.rm = T)
     }
     if(is.null(priorfunc)) {
       err <- (error_func(ec, pred_curve, (par[1])))
@@ -271,7 +271,6 @@ stat.mdl.sl.pred.ex <- function(mdl, x, tau) {
 ##' @return a fit model
 ##' @export
 ##'
-
 stat.mdl.lin.fit <- function(x, y) {
   tmp <- data.frame(y = y, x)
   rc <- glm(as.formula(paste0("y ~", paste(names(x), collapse = "+"))), data = tmp, family = "gaussian")
@@ -286,7 +285,6 @@ stat.mdl.lin.fit <- function(x, y) {
 ##' @return a vector of predicted final sizes
 ##' @export
 ##'
-
 stat.mdl.lin.pred <- function(mdl, x) {
   pred <- pmax(1, predict(mdl, newdata = x))
   return(pred)
