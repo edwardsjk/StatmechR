@@ -271,6 +271,7 @@ stat.mdl.sl.pred.ex <- function(mdl, x, tau) {
 ##' @return a fit model
 ##' @export
 ##'
+
 stat.mdl.lin.fit <- function(x, y) {
   tmp <- data.frame(y = y, x)
   rc <- glm(as.formula(paste0("y ~", paste(names(x), collapse = "+"))), data = tmp, family = "gaussian")
@@ -285,6 +286,7 @@ stat.mdl.lin.fit <- function(x, y) {
 ##' @return a vector of predicted final sizes
 ##' @export
 ##'
+
 stat.mdl.lin.pred <- function(mdl, x) {
   pred <- pmax(1, predict(mdl, newdata = x))
   return(pred)
