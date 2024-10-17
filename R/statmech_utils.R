@@ -261,3 +261,31 @@ stat.mdl.sl.pred <- function(mdl, x) {
 stat.mdl.sl.pred.ex <- function(mdl, x, tau) {
   return(pmax(1,predict(mdl, onlySL = T, newdata = x %>% mutate(t = tau))$pred))
 }
+
+
+##' Function for fitting a simple linear statistical model appropriate for
+##' passing in to em_func
+##'
+##' @param x the data frame of covariates to fit based on
+##' @param y outcome
+##' @return a fit model
+##' @export
+##'
+stat.mdl.lin.fit <- function(x, y) {
+  tmp <- data.frame(y = y, x)
+  rc <- glm(as.formula(paste0("y ~", paste(names(x), collapse = "+"))), data = tmp, family = "gaussian")
+  return(rc)
+}
+
+##'Function for doing the predict for doing the predict for the
+##' results from stat.mdl.lin.fit
+##'
+##' @param mdl the fit model
+##' @param x covariate matrix
+##' @return a vector of predicted final sizes
+##' @export
+##'
+stat.mdl.lin.pred <- function(mdl, x) {
+  pred <- pmax(1, predict(mdl, newdata = x))
+  return(pred)
+}
