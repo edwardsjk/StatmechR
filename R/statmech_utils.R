@@ -26,8 +26,8 @@ fit_epi_beta <- function(ecs, epi_mdl_func, epi_mdl_pars,
       # err <- sum(error_func(ec, pred_curve, (par[1])),
       #            # stabfunc((par[1])),
       #            priorfunc((par[1]), prior)) #, na.rm = TRUE)
-      err <- sum( error_func(ec, pred_curve, (par[1])), 
-        priorfunc((par[1]), prior, ...), na.rm = T)
+      err <- error_func(ec, pred_curve, (par[1])) +
+        priorfunc((par[1]), prior, ...)
     }
     if(is.null(priorfunc)) {
       err <- (error_func(ec, pred_curve, (par[1])))
