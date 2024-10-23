@@ -196,7 +196,7 @@ em_func <- function(epi_curves, covdat, initK,
                            strt_vals = prev_epi_mdl,
                            error_func, penalty_func,
                            priorval = Kstat[iter, ], ...)
-    prev_epi_mdl <- fitepimdl[,!names(fitepimdl) %in% c("converged")]
+    prev_epi_mdl <- subset(fitepimdl, select = -converged)
 
     ## Update K
     K[iter, ] <- fitepimdl[, 1]
