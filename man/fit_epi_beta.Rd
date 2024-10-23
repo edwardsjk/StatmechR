@@ -12,7 +12,8 @@ fit_epi_beta(
   epi_mdl_pars,
   error_func,
   priorfunc = NULL,
-  prior = NULL
+  prior = NULL,
+  ...
 )
 }
 \arguments{
