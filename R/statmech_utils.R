@@ -193,12 +193,10 @@ em_func <- function(epi_curves, covdat, initK,
 
     ## Fit the epidemic model using the stat stuff
     fitepimdl <- epimdlfit(epi_curves,
-                           strt_vals = data.frame(prev_epi_mdl[, 1], # specific to normal model for now
-                                                  prev_epi_mdl[, 2],
-                                                  prev_epi_mdl[, 3]),
+                           strt_vals = prev_epi_mdl,
                            error_func, penalty_func,
                            priorval = Kstat[iter, ], ...)
-    prev_epi_mdl <- fitepimdl
+    prev_epi_mdl <- fitepimdl[,!names(fitepimdl) %in% c("converged")]
 
     ## Update K
     K[iter, ] <- fitepimdl[, 1]
