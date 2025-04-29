@@ -1,0 +1,8 @@
+library("devtools")
+library(roxygen2)
+setwd("/users/a/b/abagaels/StatMechR")
+document()
+#check()
+setwd("..")
+#install("StatmechR")
+getwd()
