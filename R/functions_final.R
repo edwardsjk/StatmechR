@@ -1,5 +1,7 @@
 #### NECESSARY FUNCTIONS ####
 
+## Required packages: tibble; tidyverse
+
 ###################################
 #### Data processing functions ####
 ###################################
@@ -29,7 +31,7 @@
 #'                stand_water = "average",
 #'                education = "low")
 #'
-sim_covariates <- function (N,
+sim_covariates <- function(N,
                             poverty = "average",
                             climate = c(0.33, 0.33, 0.33),
                             temperature = c(30, 20, 35),
@@ -92,7 +94,7 @@ sim_covariates <- function (N,
 #'
 #' @examples
 #'
-#' #' compute_Rs(covariate_data, b0 = log(2), sd = .1,
+#' compute_Rs(covariate_data, b0 = log(2), sd = .1,
 #'            b1 = log(.75), b2 = log(1.2), b3 = log(1.2),
 #'            temp_scale = 4, temp_loc = 20, b4 = log(1.2))
 #'
@@ -109,82 +111,6 @@ compute_Rs <- function(covs, b0 = log(2), sd = .1, b1 = log(.75),
                                           b4*plogis(temp, temp_loc, temp_scale), sd)))
 
   return(covs$R0)
-
-}
-
-##
-
-#' Simulate epidemic data for multiple locations based on covariate data
-#'
-#' @param N Numeric object providing the number of locations that should be simulated.
-#' @param covariates Data frame providing the covariate values for each location.
-#' @param pop_max Numeric object providing the maximum population size that could be simulated for a location. The default is `pop_max = 1e+06`
-#' @param pop_min Numeric object providing the minimum population size that could be simulated for a location. The default is `pop_min = 1e+03`
-#' @param init_I Numeric object providing the number of initial infections per location at the start of the epidemic. The default is `init_I = 10`
-#' @param timestep Numeric object providing the time step interval, for example `timestep = 7` would be weekly. The default is `timestep = 7`
-#' @param tau Numeric object providing the time frame (in days) that the epidemic should be simulated for.
-#' @param offset Numeric object providing the severity of offset applied to simulated outbreaks. Smaller values indicate a larger offset. The default is `offset = 2`.
-#'
-#' @return A data frame providing the cases of disease for each time step and location, along with the respective covariates that were provided to the function.
-#' @export
-#'
-#'
-#' @examples
-#
-#'  simulate_outbreak(population, covariate_data, pop_max = 1e+06,
-#'                    pop_min = 1e+03, init_I = 10, timestep = 7,
-#'                    tau = 120, offset = 2)
-#'
-#'
-simulate_outbreak <- function(N, covariates, pop_max = 1000000, pop_min = 1000,
-                              init_I = 10, timestep = 7, tau, offset = 2){
-
-  sim_data <- covariates %>%
-    mutate(R0 = compute_Rs(covariates), loc = 1 : n(),
-           pop = round(runif(n(), pop_min, pop_max)))
-
-  params <- data.frame(I0 = log(sim_data$pop/init_I), beta_a = -log((sim_data$R0*0.1)/2), beta_i = -log(sim_data$R0*0.07))
-
-  epidemics <- data.frame()
-
-  for (i in 1:nrow(sim_data)) {
-
-    epi <- sim_gen_pred(sim_data$pop[i], unlist(params[i,]),
-                        time_step = 7, tau)
-
-    epi <- as.data.frame(epi)
-
-    epi$loc <- i
-    epi$t <- 1:nrow(epi)
-
-    epidemics <- bind_rows(epidemics, epi)
-
-  }
-
-  offset <- sample(1:round((tau/timestep)/offset), nrow(sim_data), replace = T)
-
-  obs_epis <- epidemics  %>%
-    rename(incident = epi) %>%
-    #mutate(t = t/timestep)  %>%
-    group_by(loc) %>%
-    mutate(t = t + offset[loc]) %>%
-    #mutate(t = t + sample(1:(tau/timestep)-1, size = n(), replace = T)) %>% # offset dates so they start at different times
-    ungroup() %>%
-    filter(t <= floor(tau/timestep) & t >= 1) %>%
-    select(loc, t, incident)
-
-  obs_full <- data.frame(loc = rep(1:N, each = max(obs_epis$t)),
-                         t = rep(1:max(obs_epis$t), times = N),
-                         incident = 0)
-
-  obs_epis2 <- left_join(x = rbind(obs_epis,
-                                   anti_join(x = obs_full, y = obs_epis,
-                                             by = c("t", "loc"))),
-                         y = sim_data,
-                         by = "loc") %>%
-    rename(epiweek_date = t, district = loc, n_cases = incident)
-
-  return(obs_epis2)
 
 }
 
@@ -237,7 +163,7 @@ get_trueK <- function(dat, groups){
 #'  plot_true_curves(dat = epidemic_data, X = "epiweek_date",
 #'                   plot_group = "district", legend = TRUE)
 #'
-plot_true_curves <- function(dat, X = "b", plot_group = "a", legend = TRUE){
+plot_true_curves <- function(dat, X, plot_group, legend = FALSE){
 
   grouping <- unlist(lapply(plot_group, function(b){
 
@@ -306,7 +232,7 @@ plot_true_curves <- function(dat, X = "b", plot_group = "a", legend = TRUE){
 #' plot_true_curves(dat = epidemic_data, maskdat = masked_data,
 #'                  X = "epiweek_date", plot_group = "district", legend = TRUE)
 #'
-plot_mask_curves <- function(dat, maskdat, X = "b", plot_group = "a", legend = TRUE){
+plot_mask_curves <- function(dat, maskdat, X, plot_group, legend = FALSE){
 
   grouping1 <- unlist(lapply(plot_group, function(x){
 
@@ -405,7 +331,7 @@ plot_bias <- function(trueK, iter_results){
     mutate(iter = as.numeric(row.names(.))) %>%
     pivot_longer(cols = -iter, names_to = "loc", values_to = "est",
                  names_prefix = "X") %>%
-    mutate(loc = as.numeric(loc)) %>%
+    mutate(loc = as.numeric(gsub("[^[:digit:]]", "", loc))) %>%
     left_join(locs) %>%
     mutate(bias = est - K)%>%
     arrange(loc, iter)
@@ -531,16 +457,18 @@ stat.mdl.sl.fit.para <- function(x, y, cores = 1, family = "gaussian") {
 
 #' Title
 #'
-#' @param x
-#' @param y
-#' @param id
-#' @param family
+#' @param x A dataframe providing the variables for each location.
+#' @param y A numeric vector providing the outcome for each location.
+#' @param family A character object providing the error distribution. Currenly only `gaussian` (the default) and `poisson` are supported.
 #'
-#' @returns
+#' @return A `SuperLearner` object containing the trained model
 #' @export
 #'
 #' @examples
-stat.mdl.sl.fit <- function(x, y, id, family) {
+#'
+#' stat.mdl.sl.fit(x = my_vars, y = epi_size, family = "gaussian)
+#'
+stat.mdl.sl.fit <- function(x, y, family = "gaussian") {
   require(SuperLearner)
   require(gam)
   require(rpart)
@@ -657,7 +585,6 @@ norm_em <- function(ecs, pop_N, strt_vals, errorfxn, penaltyfunc, priorval,
 #' - `Khist.mech` Epidemic size predictions from mechanistic component at each iteration
 #' - `epi.params` Most recently optimized model parameters
 #' - `params` Optimized model parameters for each iteration
-#' - `curves` Predicted incidence curves for most recent iteration
 #' - `converged` Convergence results from the most recent iteration
 #' - `diff` Iteration difference between the last iteration and the one previous
 #' @export
@@ -673,7 +600,7 @@ norm_em <- function(ecs, pop_N, strt_vals, errorfxn, penaltyfunc, priorval,
 em_func_model <- function(epi_curves, covdat, pop_N, initK, epimdlfit,
                           starting_vals, error_func, penalty_func, statmdlfit,
                           statmdlpred, threshold = 20, max.iter = 100, cores,
-                          stat.family, tau, timestep = NULL) {
+                          stat.family = "gaussian", tau = 52, timestep = NULL) {
 
   iter <- 0                   # initialize iter
   iter_diff <- 2 * threshold  # set iter_diff > threshold for first iter
@@ -742,25 +669,21 @@ em_func_model <- function(epi_curves, covdat, pop_N, initK, epimdlfit,
     if (iter > 1) {
       iter_diff <- abs(K[iter - 1, ] - K[iter, ])
     }
-    #print(rbind(lastK[1:5], Kstat[iter, 1:5], K[iter, 1:5]))
+
     print(rbind(lastK[1:5], Kmech[iter, 1:5], K[iter, 1:5]))
 
     gc()
 
   }
 
-  model_curves <- lapply(fitepimdl, function(x){x[[2]]})
-  converged <- lapply(fitepimdl, function(x){x[[3]]})
+  converged <- lapply(fitepimdl, function(x){x[[2]]})
 
   return(list(K = K[iter, ],
-              #Kstat = Kstat[iter, ],
               Kmech = Kmech[iter, ],
               Khist = K[1:iter, ],
-              #Khist.stat = Kstat[1:iter, ],
               Khist.mech = Kmech[1:iter, ],
               epi.parms = fitepimdl,
               param.all = params,
-              curves = model_curves,
               converged = converged,
               diff = iter_diff))
 
@@ -768,21 +691,35 @@ em_func_model <- function(epi_curves, covdat, pop_N, initK, epimdlfit,
 
 ##
 
+#' Optimization of a gaussian epidemic model
+#'
+#' @param ecs  A list object providing the observed or masked epidemic curves. Each element of the list object is a numeric vector.
+#' @param epi_mdl_func A function object providing the function used to simulate the mechanistic model.
+#' @param epi_mdl_pars A dataframe providing the parameter values for each parameter (columns) and location (rows).
+#' @param error_func A function object providing the error calculation for the optimization of the mechanistic model.
+#' @param priorfunc A function object providing the penalty calculation used to penalize the mechanistic model optimization towards the results from the statistical model.
+#' @param prior A numeric vector providing the results from the statistical model that the `priorfunc` will penalize towards.
+#' @param cores A numeric object providing the number of cores that should be assigned to run the function in parallel.
+#' @param tau A character object providing the number of timesteps that should be simulated for the mechanistic model prediction.
+#' @param timestep A numeric object providng the number of days in each time step. For example, a weekly time step would be `timestep = 7`
+#'
+#' @returns A list object consisting of, for each location:
+#'            - a dataframe with the updated parameter values
+#'            - a numeric object indicating whether the optimization
+#'              converged. A `0` indicates convergence.
+#' @export
+#'
+#' @examples
+#'
+#' fit_norm_model(ecs = my_curves, epi_mdl_func = my_epi_model,
+#'                epi_mdl_pars = starting_values, error_func = norm_error,
+#'                prior_func = NULL, prior = NULL, cores = 1, tau = 70,
+#'                timestep = NULL)
+#'
 fit_norm_model <- function(ecs, epi_mdl_func, epi_mdl_pars,
                            error_func, priorfunc = NULL, prior = NULL,
                            cores, tau, timestep = NULL) {
 
-#' Title
-#'
-#' @param pars
-#' @param ec
-#' @param priorfunc
-#' @param prior
-#'
-#' @returns
-#' @export
-#'
-#' @examples
   obj_fxn <- function(pars, ec, priorfunc = NULL, prior = NULL) {
 
     pred_curve <- epi_mdl_func(pars, length(ec))
@@ -838,9 +775,7 @@ fit_norm_model <- function(ecs, epi_mdl_func, epi_mdl_pars,
 
     new_pars <- tmp$par
 
-    curves <- NA
-
-    return(list(new_pars, curves, converged))
+    return(list(new_pars, converged))
 
     gc()
 
@@ -853,25 +788,34 @@ fit_norm_model <- function(ecs, epi_mdl_func, epi_mdl_pars,
 
 ##
 
-#' Title
+#' Optimization of a compartmental epidemic model
 #'
-#' @param ecs
-#' @param N
-#' @param epi_mdl_func
-#' @param epi_mdl_pred
-#' @param epi_mdl_pars
-#' @param error_func
-#' @param priorfunc
-#' @param prior
-#' @param cores
-#' @param tau
-#' @param timestep
 #'
-#' @returns
+#' @param ecs  A list object providing the observed or masked epidemic curves. Each element of the list object is a numeric vector.
+#' @param N A numeric vector providing the population size in each location.
+#' @param epi_mdl_func A function object providing the function used to simulate the mechanistic model.
+#' @param epi_mdl_pars A dataframe providing the parameter values for each parameter (columns) and location (rows).
+#' @param error_func A function object providing the error calculation for the optimization of the mechanistic model.
+#' @param priorfunc A function object providing the penalty calculation used to penalize the mechanistic model optimization towards the results from the statistical model.
+#' @param prior A numeric vector providing the results from the statistical model that the `priorfunc` will penalize towards.
+#' @param cores A numeric object providing the number of cores that should be assigned to run the function in parallel.
+#' @param tau A character object providing the number of timesteps that should be simulated for the mechanistic model prediction.
+#' @param timestep A numeric object providng the number of days in each time step. For example, a weekly time step would be `timestep = 7`
+#'
+#' @returns A list object consisting of, for each location:
+#'            - a dataframe with the updated parameter values
+#'            - a numeric object indicating whether the optimization
+#'              converged. A `0` indicates convergence.
 #' @export
 #'
 #' @examples
-fit_epi_model <- function(ecs, N, epi_mdl_func, epi_mdl_pred, epi_mdl_pars,
+#'
+#'fit_epi_model(ecs = my_curves, epi_mdl_func = my_epi_model,
+#'              epi_mdl_pars = starting_values, error_func = norm_error,
+#'              prior_func = NULL, prior = NULL, cores = 1, tau = 70,
+#'              timestep = 7)
+#'
+fit_epi_model <- function(ecs, N, epi_mdl_func, epi_mdl_pars,
                           error_func, priorfunc = NULL, prior = NULL, cores,
                           tau, timestep) {
 
@@ -929,13 +873,13 @@ fit_epi_model <- function(ecs, N, epi_mdl_func, epi_mdl_pred, epi_mdl_pars,
 
     converged <- tmp$convergence
 
-    curves <- epi_mdl_pred(N2, tmp$par[2:length(tmp$par)], timestep, tau + length(ec))
+    curves <- epi_mdl_func(N2, tmp$par[2:length(tmp$par)], timestep, tau + length(ec))
 
-    Kmech <- sum(curves)
+    Kmech <- sum(curves$incidence)
 
     new_pars <- c(Kmech, tmp$par[2:length(tmp$par)])
 
-    return(list(new_pars, curves, converged))
+    return(list(new_pars, converged))
 
     gc()
 
@@ -947,471 +891,23 @@ fit_epi_model <- function(ecs, N, epi_mdl_func, epi_mdl_pred, epi_mdl_pars,
 }
 
 
-##
-
-#' Title
-#'
-#' @param ecs
-#' @param pop_N
-#' @param strt_vals
-#' @param errorfxn
-#' @param penaltyfunc
-#' @param priorval
-#' @param cores
-#' @param tau
-#' @param timestep
-#'
-#' @returns
-#' @export
-#'
-#' @examples
-SEIR_em <- function(ecs, pop_N, strt_vals, errorfxn, penaltyfunc, priorval,
-                    cores, tau, timestep) {
-
-  model_fit <- fit_epi_model(ecs, pop_N, SEIR_fit, SEIR_pred, strt_vals,
-                             errorfxn, priorfunc = penaltyfunc,
-                             prior = priorval, cores, tau, timestep)
-
-  return(model_fit)
-
-}
-
-##
-
-#' Title
-#'
-#' @param N
-#' @param pars
-#' @param time_step
-#' @param epi_length
-#'
-#' @returns
-#' @export
-#'
-#' @examples
-SEIR_fit <- function(N, pars, time_step, epi_length){
-
-  #pars includes:
-  #I0, beta_s, beta_a, beta_w, bac_growth
-
-  # sigma = 0.66
-  prop_asymp = 0.8
-  # phi_s = 0.2
-  # phi_a = 0.2
-  prob_detect = 0.425
-
-  I0 = round(N * exp(-abs(pars[1])))
-
-  if(I0 < 1){
-
-    I0 = 1
-
-  }
-
-  beta_s = exp(-abs(pars[2]))
-  beta_a = exp(-abs(pars[3]))
-
-  cur_state <- c(t = 0, S = N - I0, E = 0,
-                 I_s = round(I0 * (1 - prop_asymp)),
-                 I_a = round(I0 * prop_asymp), R = 0,
-                 incident = rbinom(1, round(I0 * (1 - prop_asymp)), prob_detect))
-
-  tmp <- list(cur_state)
-  i <- 1
-
-  while(i <= epi_length){
-
-    i = i + 1
-
-    cur_state <- next_state_SEIR(cur_state, beta_s, beta_a, sigma = 0.66,
-                                 prop_asymp, phi_s = 0.2, phi_a = 0.2,
-                                 prob_detect, time_step, N)
-
-    tmp[[i]] <- cur_state
-
-  }
-
-  epi <- bind_rows(tmp)
-
-  return(epi)
-
-}
-
-##
-
-#' Title
-#'
-#' @param N
-#' @param pars
-#' @param time_step
-#' @param tau
-#'
-#' @returns
-#' @export
-#'
-#' @examples
-SEIR_pred <- function(N, pars, time_step, tau){
-
-  #par includes:
-  #I0, beta_s, beta_a, beta_w, bac_growth
-
-  # sigma = 0.66
-  prop_asymp = 0.8
-  # phi_s = 0.2
-  # phi_a = 0.2
-  prob_detect = 0.425
-
-  I0 = round(N * exp(-abs(pars[1])))
-
-  if(I0 < 1){
-
-    I0 = 1
-
-  }
-
-  beta_s = exp(-abs(pars[2]))
-  beta_a = exp(-abs(pars[3]))
-
-  cur_state <- c(t = 0, S = N - I0,
-                 E = 0, I_s = round(I0 * (1 - prop_asymp)),
-                 I_a = round(I0 * prop_asymp), R = 0,
-                 incident = rbinom(1, round(I0 * (1 - prop_asymp)), prob_detect))
-
-  tmp <- list(cur_state)
-  i <- 1
-
-  while(i <= tau){
-
-    i = i + 1
-
-    cur_state <- next_state_SEIR(cur_state, beta_s, beta_a, sigma = 0.66,
-                                 prop_asymp, phi_s = 0.2, phi_a = 0.2,
-                                 prob_detect, time_step, N)
-
-    tmp[[i]] <- cur_state
-
-  }
-
-  epi_curve <- bind_rows(tmp)$incident
-
-  return(epi_curve)
-
-}
-
-##
-
-#' Title
-#'
-#' @param cur_state
-#' @param beta_s
-#' @param beta_a
-#' @param sigma
-#' @param prop_asymp
-#' @param phi_s
-#' @param phi_a
-#' @param prob_detect
-#' @param time_step
-#' @param N
-#'
-#' @returns
-#' @export
-#'
-#' @examples
-next_state_SEIR <- function(cur_state, beta_s, beta_a, sigma,
-                            prop_asymp, phi_s, phi_a,
-                            prob_detect, time_step,
-                            N){
-
-  lambda <- (beta_s * cur_state[4]/N) + (beta_a * cur_state[5]/N)
-
-  StoE = rbinom(1, cur_state[2], 1-exp(-time_step*lambda))
-  StoE = ifelse(is.na(StoE), 0, StoE)
-
-  new_infs = rbinom(1, cur_state[3], 1-exp(-time_step*sigma))
-  new_infs = ifelse(is.na(new_infs), 0, new_infs)
-
-  IstoR = rbinom(1, cur_state[4], 1-exp(-time_step*phi_s))
-  IstoR = ifelse(is.na(IstoR), 0, IstoR)
-
-  IatoR = rbinom(1, cur_state[5], 1-exp(-time_step*phi_a))
-  IatoR = ifelse(is.na(IatoR), 0, IatoR)
-
-  EtoIs = round(new_infs * (1-prop_asymp))
-  EtoIa = round(new_infs * prop_asymp)
-
-  cur_state[1] <- cur_state[1] + time_step
-  cur_state[2] <- cur_state[2] - StoE
-  cur_state[3] <- cur_state[3] + StoE - new_infs
-  cur_state[4] <- cur_state[4] + EtoIs - IstoR
-  cur_state[5] <- cur_state[5] + EtoIa - IatoR
-  cur_state[6] <- cur_state[6] + IstoR + IatoR
-
-  cur_state[7] <- rbinom(1, EtoIs, prob_detect)
-
-  return(cur_state)
-
-}
-
-##
-
-#' Title
-#'
-#' @param ecs
-#' @param pop_N
-#' @param strt_vals
-#' @param errorfxn
-#' @param penaltyfunc
-#' @param priorval
-#' @param cores
-#' @param tau
-#' @param timestep
-#'
-#' @returns
-#' @export
-#'
-#' @examples
-covid_em <- function(ecs, pop_N, strt_vals, errorfxn, penaltyfunc, priorval,
-                     cores, tau, timestep) {
-
-  model_fit <- fit_epi_model(ecs, pop_N, covid_fit, covid_pred, strt_vals,
-                             errorfxn, priorfunc = penaltyfunc,
-                             prior = priorval, cores, tau, timestep)
-
-  return(model_fit)
-
-}
-
-##
-
-#' Title
-#'
-#' @param N
-#' @param pars
-#' @param time_step
-#' @param epi_length
-#'
-#' @returns
-#' @export
-#'
-#' @examples
-covid_fit <- function(N, pars, time_step, epi_length){
-
-  #pars includes:
-  #I0, beta_p, beta_i, beta_gradient, prob_detect
-
-  # sigma = 0.22
-  # phi = 0.36
-  #
-  # alpha_a = 0.14
-  # alpha_i = 0.14
-
-  beta_gradient = exp(-abs(pars[5]))
-  prob_detect = exp(-abs(pars[6]))
-  prop_asymp = 0.24
-
-  I0 = round(N * exp(-abs(pars[1])))
-
-  if(I0 < 2){
-
-    I0 = 2
-
-  }
-
-  beta_p = exp(-abs(pars[2]))
-  beta_i = exp(-abs(pars[3]))
-  beta_a = exp(-abs(pars[4]))
-
-  cur_state <- c(t = 0, S = N - I0, E = 0,
-                 P = round(I0/2 *(1 - prop_asymp)),
-                 A = round(I0/2 * prop_asymp), I = 0, R = 0,
-                 incident = rbinom(1, round(I0/2 * (1 - prop_asymp)),
-                                   prob_detect))
-
-  tmp <- list(cur_state)
-  i <- 1
-
-  while(i <= epi_length){
-
-    i = i + 1
-
-    cur_state <- next_state_covid(i, cur_state, beta_p, beta_a, beta_i,
-                                  sigma = 0.22, phi = 0.36, alpha_a = 0.14,
-                                  alpha_i = 0.14, beta_gradient, prob_detect,
-                                  prop_asymp, time_step, N)
-
-    tmp[[i]] <- cur_state
-
-  }
-
-  epi <- bind_rows(tmp)
-
-  return(epi)
-
-}
-
-##
-
-#' Title
-#'
-#' @param N
-#' @param pars
-#' @param time_step
-#' @param tau
-#'
-#' @returns
-#' @export
-#'
-#' @examples
-covid_pred <- function(N, pars, time_step, tau){
-
-  #pars includes:
-  #I0, beta_p, beta_i, beta_gradient, prob_detect
-
-  # sigma = 0.22
-  # phi = 0.36
-  #
-  # alpha_a = 0.14
-  # alpha_i = 0.14
-
-  beta_gradient = exp(-abs(pars[5]))
-  prob_detect = exp(-abs(pars[6]))
-  prop_asymp = 0.24
-
-  I0 = round(N * exp(-abs(pars[1])))
-
-  if(I0 < 1){
-
-    I0 = 2
-
-  }
-
-  beta_p = exp(-abs(pars[2]))
-  beta_i = exp(-abs(pars[3]))
-  beta_a = exp(-abs(pars[4]))
-
-  cur_state <- c(t = 0, S = N - I0, E = 0,
-                 P = round(I0/2 *(1 - prop_asymp)),
-                 A = round(I0/2 * prop_asymp), I = 0, R = 0,
-                 incident = rbinom(1, round(I0/2 * (1 - prop_asymp)),
-                                   prob_detect))
-
-  tmp <- list(cur_state)
-  i <- 1
-
-  while(i <= tau){
-
-    i = i + 1
-
-    cur_state <- next_state_covid(i, cur_state, beta_p, beta_a, beta_i,
-                                  sigma = 0.22, phi = 0.36, alpha_a = 0.14,
-                                  alpha_i = 0.14, beta_gradient, prob_detect,
-                                  prop_asymp, time_step, N)
-
-    tmp[[i]] <- cur_state
-
-  }
-
-  epi_curve <- bind_rows(tmp)$incident
-
-  return(epi_curve)
-
-}
-
-##
-
-#' Title
-#'
-#' @param i
-#' @param cur_state
-#' @param beta_p
-#' @param beta_a
-#' @param beta_i
-#' @param sigma
-#' @param phi
-#' @param alpha_a
-#' @param alpha_i
-#' @param beta_gradient
-#' @param prob_detect
-#' @param prop_asymp
-#' @param time_step
-#' @param N
-#'
-#' @returns
-#' @export
-#'
-#' @examples
-next_state_covid <- function(i, cur_state, beta_p, beta_a, beta_i, sigma, phi,
-                             alpha_a, alpha_i, beta_gradient, prob_detect,
-                             prop_asymp, time_step, N){
-
-  if(i >= 24 & i < 93){
-
-    beta_i <- beta_i * 0.19
-    beta_p <- beta_p * 0.19
-    beta_a <- beta_a * 0.19
-
-  }
-
-  if(i >= 93){
-
-    beta_i_t <- (beta_gradient * i) + (beta_i * 0.19)
-    beta_a_t <- (beta_gradient * i) + (beta_a * 0.19)
-    beta_p_t <- (beta_gradient * i) + (beta_p * 0.19)
-
-    beta_i <- ifelse(beta_i_t <= beta_i, beta_i_t, beta_i)
-    beta_a <- ifelse(beta_a_t <= beta_a, beta_a_t, beta_a)
-    beta_p <- ifelse(beta_p_t <= beta_p, beta_p_t, beta_p)
-
-  }
-
-  lambda <- (beta_p * cur_state[4]/N) + (beta_a * cur_state[5]/N) + (beta_i * cur_state[6]/N)
-
-  StoE = rbinom(1, cur_state[2], 1-exp(-time_step*lambda))
-  StoE <- ifelse(is.na(StoE) == F, StoE, 0)
-
-  new_infs = rbinom(1, cur_state[3], 1-exp(-time_step*sigma))
-  new_infs <- ifelse(is.na(new_infs) == F, new_infs, 0)
-
-  EtoA = round(new_infs * prop_asymp)
-  EtoP = round(new_infs * (1 - prop_asymp))
-
-  PtoI = rbinom(1, cur_state[4], 1-exp(-time_step*phi))
-  PtoI <- ifelse(is.na(PtoI) == F, PtoI, 0)
-
-  AtoR = rbinom(1, cur_state[5], 1-exp(-time_step*alpha_a))
-  AtoR <- ifelse(is.na(AtoR) == F, AtoR, 0)
-
-  ItoR = rbinom(1, cur_state[6], 1-exp(-time_step*alpha_i))
-  ItoR <- ifelse(is.na(ItoR) == F, ItoR, 0)
-
-  cur_state[1] <- cur_state[1] + time_step
-  cur_state[2] <- cur_state[2] - StoE
-  cur_state[3] <- cur_state[3] + StoE - new_infs
-  cur_state[4] <- cur_state[4] + EtoP - PtoI
-  cur_state[5] <- cur_state[5] + EtoA - AtoR
-  cur_state[6] <- cur_state[6] + PtoI - ItoR
-  cur_state[7] <- cur_state[7] + AtoR + ItoR
-  cur_state[8] <- rbinom(1, PtoI, prob_detect)
-
-  return(cur_state)
-
-}
-
-
 #########################
 #### Error functions ####
 #########################
 
-#' Title
+#' Poisson error term
 #'
-#' @param ec
-#' @param pred
-#' @param estK
+#' @param ec A numeric vector providing the incidence at each timestep
+#' @param pred A numeric vector providing predicted incidence at the each timestep
+#' @param estK A numeric object providing the estK parameter used in the mechanistic model prediction
 #'
-#' @returns
+#' @returns A numeric object representing the error of the objective function
 #' @export
 #'
 #' @examples
+#'
+#' poisson_error(ec = observed_cases, pred = model_cases, estK = params[1])
+#'
 poisson_error <- function(ec, pred, estK) {
 
   logprob <- sum(dpois(ec, pred, log = TRUE)) +
@@ -1423,16 +919,19 @@ poisson_error <- function(ec, pred, estK) {
 
 ##
 
-#' Title
+#' Poisson error term penalized towards observed cases
 #'
-#' @param ec
-#' @param pred
-#' @param estK
+#' @param ec A numeric vector providing the incidence at each timestep
+#' @param pred A numeric vector providing predicted incidence at the each timestep. All values must be positive and non-zero.
+#' @param estK A numeric object providing the estK parameter used in the mechanistic model. All values must be positive and non-zero.
 #'
-#' @returns
+#' @returns A numeric object representing the error of the objective function
 #' @export
 #'
 #' @examples
+#'
+#' poisson_error2(ec = observed_cases, pred = model_cases, estK = params[1])
+#'
 poisson_error2 <- function(ec, pred, estK) {
 
   logprob <- sum(dpois(ec, pred, log = TRUE)) +
@@ -1444,15 +943,18 @@ poisson_error2 <- function(ec, pred, estK) {
 
 ##
 
-#' Title
+#' Possion penalty term
 #'
-#' @param estK
-#' @param prior
+#' @param estK A numeric object providing the estK parameter used in the mechanistic model prediction
+#' @param prior A numeric object providing the prediction from the statistical model
 #'
-#' @returns
+#' @returns A numeric object representing the prior penalty error
 #' @export
 #'
 #' @examples
+#'
+#' poispen(estK = params[1], prior = stat_result)
+#'
 poispen <- function(estK, prior) {
 
   penalty <- dpois(round(estK), prior, log = TRUE)
@@ -1463,16 +965,19 @@ poispen <- function(estK, prior) {
 
 ##
 
-#' Title
+#' Gaussian error term
 #'
-#' @param ec
-#' @param pred
-#' @param estK
+#' @param ec A numeric vector providing the incidence at each timestep
+#' @param pred A numeric vector providing predicted incidence at the each timestep
+#' @param estK A numeric object providing the estK parameter used in the mechanistic model prediction
 #'
-#' @returns
+#' @returns A numeric object representing the error of the objective function
 #' @export
 #'
 #' @examples
+#'
+#' norm_error(ec = observed_cases, pred = model_cases, estK = params[1])
+#'
 norm_error <- function(ec, pred, estK){
 
   logprob <- sum(dnorm(ec, pred, 1, log = TRUE)) +
@@ -1484,16 +989,19 @@ norm_error <- function(ec, pred, estK){
 
 ##
 
-#' Title
+#' Gaussian error term penalized towards the observed
 #'
-#' @param ec
-#' @param pred
-#' @param estK
+#' @param ec A numeric vector providing the incidence at each timestep
+#' @param pred A numeric vector providing predicted incidence at the each timestep. All values must be positive and non-zero.
+#' @param estK A numeric object providing the estK parameter used in the mechanistic model. All values must be positive and non-zero.
 #'
-#' @returns
+#' @returns A numeric object representing the error of the objective function
 #' @export
 #'
 #' @examples
+#'
+#' norm_error2(ec = observed_cases, pred = model_cases, estK = params[1])
+#'
 norm_error2 <- function(ec, pred, estK){
 
   logprob <- sum(dnorm(ec, pred, 1, log = TRUE)) +
@@ -1503,13 +1011,14 @@ norm_error2 <- function(ec, pred, estK){
 
 }
 
-## sqrt penalty
-#' Title
+##
+
+#' Square root penalty term
 #'
-#' @param estK
-#' @param prior
+#' @param estK A numeric object providing the estK parameter used in the mechanistic model prediction
+#' @param prior A numeric object providing the prediction from the statistical model
 #'
-#' @returns
+#' @returns A numeric object representing the prior penalty error
 #' @export
 #'
 #' @examples
@@ -1518,14 +1027,14 @@ sqrtpen <- function(estK, prior) {
   return(penalty)
 }
 
+##
 
-## diffuse sqrt penalty
-#' Title
+#' Diffuse square root penalty term
 #'
-#' @param estK
-#' @param prior
+#' @param estK A numeric object providing the estK parameter used in the mechanistic model prediction
+#' @param prior A numeric object providing the prediction from the statistical model
 #'
-#' @returns
+#' @returns A numeric object representing the prior penalty error
 #' @export
 #'
 #' @examples
@@ -1535,13 +1044,14 @@ sqrtpen_diffuse <- function(estK, prior) {
 }
 
 
-## normal penalty
-#' Title
+##
+
+#' Gaussian penalty term
 #'
-#' @param estK
-#' @param prior
+#' @param estK A numeric object providing the estK parameter used in the mechanistic model prediction
+#' @param prior A numeric object providing the prediction from the statistical model
 #'
-#' @returns
+#' @returns A numeric object representing the prior penalty error
 #' @export
 #'
 #' @examples
@@ -1554,55 +1064,31 @@ normpen <- function(estK, prior) {
 #### Analysis functions ####
 ############################
 
-#' Title
+#' Calculate the number of cases averted by allocation of vaccine doses
 #'
-#' @param method.pred
-#' @param method.name
-#' @param dat
-#' @param maxvax
+#' @param method.pred A mathematical expression used to estimate the number of remaining cases
+#' @param method.name A character object providing the name of the method
+#' @param dat A dataframe providing the location name (`loc`), the true epidemic size (`K`), the observed cases (`observed`), the predicted sizes from the models, and the population size for the location (`N`).
+#' @param maxvax A numeric object providing the max number of vaccine doses that can be allocated. The default is `3e6`.
 #'
-#' @returns
+#' @returns A dataframe containing the following columns, that shows where
+#'          doses were allocated and the number of infections prevented:
+#'            - `loc` which provides the location name.
+#'            - `method` which provides the name of the method used to
+#'              calculated the estimated remaining cases.
+#'            - `cumv2` which provides the cumulative number of vaccine doses
+#'              allocated after each location.
+#'            - `inf_prevented` which provides the cumulative number of
+#'              infections/cases averted
 #' @export
 #'
 #' @examples
+#'
+#' get_infPrevented_beta(method.pred = stat - observed, method.name = "stat",
+#'                       dat = my_dataset, maxvax = 3e6)
+#'
 get_infPrevented_beta <- function(method.pred, method.name, dat = flat_res,
-                                  maxvax = 3e6) {
-
-  #require(tidyverse)
-  res <- dat %>%
-    ungroup() %>%
-    mutate(method = method.name,
-           u = runif(n = nrow(dat)),
-           est_remaining = {{method.pred}},
-           true_remaining = K - observed,
-           sortval = ifelse(method == "random", u, (est_remaining)/N)) %>%
-    arrange(-sortval) %>%
-    #filter(observed>0) %>% # replace with some prob of introduction>0?
-    mutate(vaxxed = (N) * coverage,
-           cumv = cumsum(vaxxed)) %>%
-    filter(cumv<=maxvax) %>%
-    mutate(inf_prevented = cumsum((true_remaining) * coverage * VE)) %>%
-    select(loc, method, cumv, inf_prevented)
-
-  return(res)
-
-}
-
-
-#' Title
-#'
-#' @param method.pred
-#' @param method.name
-#' @param dat
-#' @param maxvax
-#'
-#' @returns
-#' @export
-#'
-#' @examples
-get_infPrevented_beta2 <- function(method.pred, method.name, dat = flat_res,
                                    maxvax = 3e6) {
-  #require(tidyverse)
   res <- dat %>%
     ungroup() %>%
     mutate(method = method.name,
@@ -1611,7 +1097,6 @@ get_infPrevented_beta2 <- function(method.pred, method.name, dat = flat_res,
            true_remaining = K - observed,
            sortval = ifelse(method == "random", u, (est_remaining)/N)) %>%
     arrange(-sortval) %>%
-    # filter(observed>0) %>% # replace with some prob of introduction>0?
     mutate(vaxxed = (N) * coverage,
            cumv = cumsum(vaxxed)) %>%
     filter(lag(cumv, n = 1, default = 0) <= maxvax) %>%
@@ -1620,4 +1105,35 @@ get_infPrevented_beta2 <- function(method.pred, method.name, dat = flat_res,
            inf_prevented = cumsum((true_remaining*vaxhere/vaxxed) * coverage * VE)) %>%
     select(loc, method, cumv2, inf_prevented)
   return(res)
+}
+
+########################
+#### Jess functions ####
+########################
+
+#' Function for fitting a simple linear statistical model appropriate for
+#' passing in to em_func
+#'
+#' @param x the data frame of covariates to fit based on
+#' @param y outcome
+#' @return a fit model
+#' @export
+#'
+stat.mdl.lin.fit <- function(x, y) {
+  tmp <- data.frame(y = y, x)
+  rc <- glm(as.formula(paste0("y ~", paste(names(x), collapse = "+"))), data = tmp, family = "gaussian")
+  return(rc)
+}
+
+#'Function for doing the predict for doing the predict for the
+#' results from stat.mdl.lin.fit
+#'
+#' @param mdl the fit model
+#' @param x covariate matrix
+#' @return a vector of predicted final sizes
+#' @export
+#'
+stat.mdl.lin.pred <- function(mdl, x) {
+  pred <- pmax(1, predict(mdl, newdata = x))
+  return(pred)
 }
