@@ -2,13 +2,23 @@
 % Please edit documentation in R/functions_final.R
 \name{plot_bias}
 \alias{plot_bias}
-\title{Title}
+\title{Plot the bias curves for the combined model}
 \usage{
 plot_bias(trueK, iter_results)
 }
 \arguments{
-\item{iter_results}{}
+\item{trueK}{A dataframe providing the true final epidemic sizes for each location}
+
+\item{iter_results}{A dataframe providing the combined model final size estimate for each location at each iteration of the combined model.}
+}
+\value{
+A ggplot object of the bias curves over the iterations of the combined model
 }
 \description{
-Title
+Plot the bias curves for the combined model
+}
+\examples{
+
+plot_bias(trueK = true_final, iter_results = Khist)
+
 }

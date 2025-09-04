@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions_final.R
 \name{sim_covariates}
 \alias{sim_covariates}
-\title{Title}
+\title{Simulate artificial covariates for locatons}
 \usage{
 sim_covariates(
   N,
@@ -15,8 +15,34 @@ sim_covariates(
 )
 }
 \arguments{
-\item{education}{}
+\item{N}{A numeric object providing the number of locations that should be simulated.}
+
+\item{poverty}{A character object providing the level of poverty in the area. Input options are \code{"high"}, \code{"average"} or \code{"low"}. The default is \code{"average"}.}
+
+\item{climate}{A numeric vector between 0 and 1 providing the proportion of locations that should be assigned to the following three climate types: "wet", "moderate" and "arid". The default is 0.33 for each climate type}
+
+\item{temperature}{A numeric vector providing temperature (in celcius) associated with the three different climate types. The default is \code{c(30, 25, 25)}.}
+
+\item{water_san}{A character object providing the level of water and sanitation in the area. Input options are \code{"high"}, \code{"average"} or \code{"low"}.  The default is \code{"average"}.}
+
+\item{stand_water}{A character object providing the level of standing water in the area.
+Input options are \code{"high"}, \code{"average"} or \code{"low"}.  The default is \code{"average"}.}
+
+\item{education}{A character object providing the level of education in the area. Input options are \code{"high"}, \code{"average"} or \code{"low"}.  The default is \code{"average"}.}
+}
+\value{
+A dataframe with a row for each location and a column for each covariate.
 }
 \description{
-Title
+Simulate artificial covariates for locatons
+}
+\examples{
+sim_covariates(N = 300,
+               poverty = "high",
+               climate = c(0.3, 0.4, 0.4),
+               temperature = c(40, 35, 50),
+               water_san = "low",
+               stand_water = "average",
+               education = "low")
+
 }

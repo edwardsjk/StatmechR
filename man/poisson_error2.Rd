@@ -2,13 +2,25 @@
 % Please edit documentation in R/functions_final.R
 \name{poisson_error2}
 \alias{poisson_error2}
-\title{Title}
+\title{Poisson error term penalized towards observed cases}
 \usage{
 poisson_error2(ec, pred, estK)
 }
 \arguments{
-\item{estK}{}
+\item{ec}{A numeric vector providing the incidence at each timestep}
+
+\item{pred}{A numeric vector providing predicted incidence at the each timestep. All values must be positive and non-zero.}
+
+\item{estK}{A numeric object providing the estK parameter used in the mechanistic model. All values must be positive and non-zero.}
+}
+\value{
+A numeric object representing the error of the objective function
 }
 \description{
-Title
+Poisson error term penalized towards observed cases
+}
+\examples{
+
+poisson_error2(ec = observed_cases, pred = model_cases, estK = params[1])
+
 }

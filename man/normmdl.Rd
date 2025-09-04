@@ -2,13 +2,28 @@
 % Please edit documentation in R/functions_final.R
 \name{normmdl}
 \alias{normmdl}
-\title{Title}
+\title{Simulate a Gaussian epidemic curve}
 \usage{
 normmdl(pars, times)
 }
 \arguments{
-\item{times}{}
+\item{pars}{A vector providing, in order:
+\itemize{
+\item the estimated epidemic size
+\item the estimated peak time of the epidemic
+\item the estimated spread of the epidemic
+}}
+
+\item{times}{A numeric object providing the number of timesteps that the epidemic should be simulated for}
+}
+\value{
+A vector of incidence values for each timestep
 }
 \description{
-Title
+Simulate a Gaussian epidemic curve
+}
+\examples{
+
+normmdl(pars = c(250, 15, 5), time = 30)
+
 }

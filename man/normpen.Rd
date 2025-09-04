@@ -2,13 +2,18 @@
 % Please edit documentation in R/functions_final.R
 \name{normpen}
 \alias{normpen}
-\title{Title}
+\title{Gaussian penalty term}
 \usage{
 normpen(estK, prior)
 }
 \arguments{
-\item{prior}{}
+\item{estK}{A numeric object providing the estK parameter used in the mechanistic model prediction}
+
+\item{prior}{A numeric object providing the prediction from the statistical model}
+}
+\value{
+A numeric object representing the prior penalty error
 }
 \description{
-Title
+Gaussian penalty term
 }

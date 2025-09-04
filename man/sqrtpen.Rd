@@ -2,13 +2,18 @@
 % Please edit documentation in R/functions_final.R
 \name{sqrtpen}
 \alias{sqrtpen}
-\title{Title}
+\title{Square root penalty term}
 \usage{
 sqrtpen(estK, prior)
 }
 \arguments{
-\item{prior}{}
+\item{estK}{A numeric object providing the estK parameter used in the mechanistic model prediction}
+
+\item{prior}{A numeric object providing the prediction from the statistical model}
+}
+\value{
+A numeric object representing the prior penalty error
 }
 \description{
-Title
+Square root penalty term
 }

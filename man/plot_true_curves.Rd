@@ -2,13 +2,28 @@
 % Please edit documentation in R/functions_final.R
 \name{plot_true_curves}
 \alias{plot_true_curves}
-\title{Title}
+\title{Plot the full epidemic curve}
 \usage{
-plot_true_curves(dat, X = "b", plot_group = "a", legend = TRUE)
+plot_true_curves(dat, X, plot_group, legend = FALSE)
 }
 \arguments{
-\item{legend}{}
+\item{dat}{A data frame providing the epidemic data over time for each location}
+
+\item{X}{A character object providing the variable that should be on the x-axis}
+
+\item{plot_group}{A character objecting providing the grouping variable for the data}
+
+\item{legend}{A logical object indicating whether a legend key should be shown. The default is \code{TRUE}}
+}
+\value{
+A ggplot of the epidemic curves over the x-axis variable and grouped by the plot_group variable
 }
 \description{
-Title
+Plot the full epidemic curve
+}
+\examples{
+
+ plot_true_curves(dat = epidemic_data, X = "epiweek_date",
+                  plot_group = "district", legend = TRUE)
+
 }

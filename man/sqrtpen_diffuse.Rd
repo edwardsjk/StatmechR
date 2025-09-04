@@ -2,13 +2,18 @@
 % Please edit documentation in R/functions_final.R
 \name{sqrtpen_diffuse}
 \alias{sqrtpen_diffuse}
-\title{Title}
+\title{Diffuse square root penalty term}
 \usage{
 sqrtpen_diffuse(estK, prior)
 }
 \arguments{
-\item{prior}{}
+\item{estK}{A numeric object providing the estK parameter used in the mechanistic model prediction}
+
+\item{prior}{A numeric object providing the prediction from the statistical model}
+}
+\value{
+A numeric object representing the prior penalty error
 }
 \description{
-Title
+Diffuse square root penalty term
 }

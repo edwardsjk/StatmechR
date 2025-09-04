@@ -2,13 +2,23 @@
 % Please edit documentation in R/functions_final.R
 \name{stat.mdl.sl.pred}
 \alias{stat.mdl.sl.pred}
-\title{Title}
+\title{Predict final epidemic sizes using a trained SuperLearner}
 \usage{
 stat.mdl.sl.pred(mdl, x)
 }
 \arguments{
-\item{x}{}
+\item{mdl}{A \code{SuperLearner} object providing the trained ensemble model.}
+
+\item{x}{A dataframe providing the variables/features for each location.}
+}
+\value{
+A numeric vector of predicted epidemic final sizes for each location.
 }
 \description{
-Title
+Predict final epidemic sizes using a trained SuperLearner
+}
+\examples{
+
+stat.mdl.sl.pred(mdl = SL_model, x = my_vars)
+
 }

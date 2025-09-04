@@ -2,13 +2,23 @@
 % Please edit documentation in R/functions_final.R
 \name{poispen}
 \alias{poispen}
-\title{Title}
+\title{Possion penalty term}
 \usage{
 poispen(estK, prior)
 }
 \arguments{
-\item{prior}{}
+\item{estK}{A numeric object providing the estK parameter used in the mechanistic model prediction}
+
+\item{prior}{A numeric object providing the prediction from the statistical model}
+}
+\value{
+A numeric object representing the prior penalty error
 }
 \description{
-Title
+Possion penalty term
+}
+\examples{
+
+poispen(estK = params[1], prior = stat_result)
+
 }

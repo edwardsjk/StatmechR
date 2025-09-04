@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions_final.R
 \name{fit_norm_model}
 \alias{fit_norm_model}
-\title{Title}
+\title{Optimization of a gaussian epidemic model}
 \usage{
 fit_norm_model(
   ecs,
@@ -17,8 +17,38 @@ fit_norm_model(
 )
 }
 \arguments{
-\item{timestep}{}
+\item{ecs}{A list object providing the observed or masked epidemic curves. Each element of the list object is a numeric vector.}
+
+\item{epi_mdl_func}{A function object providing the function used to simulate the mechanistic model.}
+
+\item{epi_mdl_pars}{A dataframe providing the parameter values for each parameter (columns) and location (rows).}
+
+\item{error_func}{A function object providing the error calculation for the optimization of the mechanistic model.}
+
+\item{priorfunc}{A function object providing the penalty calculation used to penalize the mechanistic model optimization towards the results from the statistical model.}
+
+\item{prior}{A numeric vector providing the results from the statistical model that the \code{priorfunc} will penalize towards.}
+
+\item{cores}{A numeric object providing the number of cores that should be assigned to run the function in parallel.}
+
+\item{tau}{A character object providing the number of timesteps that should be simulated for the mechanistic model prediction.}
+
+\item{timestep}{A numeric object providng the number of days in each time step. For example, a weekly time step would be \code{timestep = 7}}
+}
+\value{
+A list object consisting of, for each location:
+- a dataframe with the updated parameter values
+- a numeric object indicating whether the optimization
+converged. A \code{0} indicates convergence.
 }
 \description{
-Title
+Optimization of a gaussian epidemic model
+}
+\examples{
+
+fit_norm_model(ecs = my_curves, epi_mdl_func = my_epi_model,
+               epi_mdl_pars = starting_values, error_func = norm_error,
+               prior_func = NULL, prior = NULL, cores = 1, tau = 70,
+               timestep = NULL)
+
 }

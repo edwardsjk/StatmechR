@@ -2,13 +2,36 @@
 % Please edit documentation in R/functions_final.R
 \name{get_infPrevented_beta}
 \alias{get_infPrevented_beta}
-\title{Title}
+\title{Calculate the number of cases averted by allocation of vaccine doses}
 \usage{
 get_infPrevented_beta(method.pred, method.name, dat = flat_res, maxvax = 3e+06)
 }
 \arguments{
-\item{maxvax}{}
+\item{method.pred}{A mathematical expression used to estimate the number of remaining cases}
+
+\item{method.name}{A character object providing the name of the method}
+
+\item{dat}{A dataframe providing the location name (\code{loc}), the true epidemic size (\code{K}), the observed cases (\code{observed}), the predicted sizes from the models, and the population size for the location (\code{N}).}
+
+\item{maxvax}{A numeric object providing the max number of vaccine doses that can be allocated. The default is \code{3e6}.}
+}
+\value{
+A dataframe containing the following columns, that shows where
+doses were allocated and the number of infections prevented:
+- \code{loc} which provides the location name.
+- \code{method} which provides the name of the method used to
+calculated the estimated remaining cases.
+- \code{cumv2} which provides the cumulative number of vaccine doses
+allocated after each location.
+- \code{inf_prevented} which provides the cumulative number of
+infections/cases averted
 }
 \description{
-Title
+Calculate the number of cases averted by allocation of vaccine doses
+}
+\examples{
+
+get_infPrevented_beta(method.pred = stat - observed, method.name = "stat",
+                      dat = my_dataset, maxvax = 3e6)
+
 }

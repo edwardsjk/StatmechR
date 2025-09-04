@@ -2,13 +2,25 @@
 % Please edit documentation in R/functions_final.R
 \name{norm_error}
 \alias{norm_error}
-\title{Title}
+\title{Gaussian error term}
 \usage{
 norm_error(ec, pred, estK)
 }
 \arguments{
-\item{estK}{}
+\item{ec}{A numeric vector providing the incidence at each timestep}
+
+\item{pred}{A numeric vector providing predicted incidence at the each timestep}
+
+\item{estK}{A numeric object providing the estK parameter used in the mechanistic model prediction}
+}
+\value{
+A numeric object representing the error of the objective function
 }
 \description{
-Title
+Gaussian error term
+}
+\examples{
+
+norm_error(ec = observed_cases, pred = model_cases, estK = params[1])
+
 }

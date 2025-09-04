@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions_final.R
 \name{em_func_model}
 \alias{em_func_model}
-\title{Title}
+\title{Combined mechanistic and statistic iterative model}
 \usage{
 em_func_model(
   epi_curves,
@@ -18,14 +18,67 @@ em_func_model(
   threshold = 20,
   max.iter = 100,
   cores,
-  stat.family,
-  tau,
+  stat.family = "gaussian",
+  tau = 52,
   timestep = NULL
 )
 }
 \arguments{
-\item{timestep}{}
+\item{epi_curves}{A list object providing the observed or masked epidemic curves. Each element of the list object is a numeric vector.}
+
+\item{covdat}{A data frame object providing the covariate values for each location.}
+
+\item{pop_N}{A numeric vector providing the population size for each location.}
+
+\item{initK}{\subsection{removing argument}{
+}}
+
+\item{epimdlfit}{A function object providing the wrapper used to run the chosen mechanistic model.}
+
+\item{starting_vals}{A data frame providing the starting parameter values for the mechanistic model.}
+
+\item{error_func}{A function object providing the error calculation for the optimization of the mechanistic model.}
+
+\item{penalty_func}{A function object providing the penalty calculation used to penalize the mechanistic model optimization towards the results from the statistical model.}
+
+\item{statmdlfit}{A function object providing the function used to fit the statistical model component.}
+
+\item{statmdlpred}{A function object providing the function used to predict the outcome using the trained statistical model.}
+
+\item{threshold}{A numeric object providing a threshold for the iteration difference. The iteration difference is difference between the current iteration prediction and previous iteration prediction. Once this drops below the threshold among all locations, the iterative process will stop. The default is \code{20}}
+
+\item{max.iter}{A numeric object providing the maximum number of iterations that should be completed. If the threshold has not been met by this number of iterations, the iterative process will stop. The default is \code{100}}
+
+\item{cores}{A numeric object providing the number of cores that should be assigned to run the function in parallel.}
+
+\item{stat.family}{A character object providing the error distribution family for the statistical model. The options are \code{"gaussian"} and \code{"poisson"}.}
+
+\item{tau}{A character object providing the number of timesteps that should be simulated for the mechanistic model prediction.}
+
+\item{timestep}{A numeric object providng the number of days in each time step. For example, a weekly time step would be \code{timwestep = 7}}
+}
+\value{
+A list object containing the following objects:
+\itemize{
+\item \code{K} Most recent prediction of epidemic size from combined model
+\item \code{Kmech} Most recent prediction of epidemic size from the mechanistic component
+\item \code{Khist} Epidemic size predictions from the combined model at each iteration
+\item \code{Khist.mech} Epidemic size predictions from mechanistic component at each iteration
+\item \code{epi.params} Most recently optimized model parameters
+\item \code{params} Optimized model parameters for each iteration
+\item \code{converged} Convergence results from the most recent iteration
+\item \code{diff} Iteration difference between the last iteration and the one previous
+}
 }
 \description{
-Title
+Combined mechanistic and statistic iterative model
+}
+\examples{
+
+em_func_model(epi_curves = my_curves, covdat = env_data, init_K = kmech,
+              starting_vals = values, error_func = norm_error,
+              statmdlfit = my_stat_fit, statmdlpred = my_stat_pred,
+              threshold = 5, max.iter = 1000, cores = 20,
+              stat.family = "gaussian", tau = 52, timestep = 7)
+
 }

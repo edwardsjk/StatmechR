@@ -2,13 +2,23 @@
 % Please edit documentation in R/functions_final.R
 \name{get_trueK}
 \alias{get_trueK}
-\title{Title}
+\title{Extract the final epidemic size from the epidemic data}
 \usage{
 get_trueK(dat, groups)
 }
 \arguments{
-\item{groups}{}
+\item{dat}{A data frame providing the epidemic cases over time for each location}
+
+\item{groups}{A character object providing the variable for the location level at which the final epidemic size should be calculated}
+}
+\value{
+A data frame providing the location and the corresponding final epidemic size
 }
 \description{
-Title
+Extract the final epidemic size from the epidemic data
+}
+\examples{
+
+ get_trueK(dat = epidemic_data, groups = "district")
+
 }
