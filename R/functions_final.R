@@ -19,6 +19,8 @@
 #'
 #' @return A dataframe with a row for each location and a column for each covariate.
 #'
+#' @importFrom dplyr tibble
+#' @importFrom dplyr mutate
 #'
 #' @export
 #'
@@ -90,6 +92,9 @@ sim_covariates <- function(N,
 #' @param b4 Numeric object providing the coefficient for the temperature covariate. The default is `log(1.2)`
 #'
 #' @return A numeric vector providing the calculated R0 values for each location
+#'
+#' @importFrom dplyr mutate
+#'
 #' @export
 #'
 #' @examples
@@ -122,6 +127,11 @@ compute_Rs <- function(covs, b0 = log(2), sd = .1, b1 = log(.75),
 #' @param groups A character object providing the variable for the location level at which the final epidemic size should be calculated
 #'
 #' @return A data frame providing the location and the corresponding final epidemic size
+#'
+#' @importFrom dplyr ungroup
+#' @importFrom dplyr group_by
+#' @importFrom dplyr summarise
+#'
 #' @export
 #'
 #' @examples
@@ -136,10 +146,10 @@ get_trueK <- function(dat, groups){
 
   })
 
-  K <- dat %>%
-    ungroup() %>%
-    group_by(do.call(pick, grouping)) %>%
-    summarise(K = sum(n_cases)) %>%
+  K <- dat |>
+    ungroup() |>
+    group_by(do.call(pick, grouping)) |>
+    summarise(K = sum(n_cases)) |>
     ungroup()
 
   return(K)
@@ -156,6 +166,14 @@ get_trueK <- function(dat, groups){
 #' @param legend A logical object indicating whether a legend key should be shown. The default is `TRUE`
 #'
 #' @return A ggplot of the epidemic curves over the x-axis variable and grouped by the plot_group variable
+#'
+#' @importFrom stringr str_to_title
+#' @importFrom dplyr group_by
+#' @importFrom dplyr summarize
+#' @importFrom dplyr ungroup
+#'
+#' @import ggplot2
+#'
 #' @export
 #'
 #' @examples
@@ -177,19 +195,20 @@ plot_true_curves <- function(dat, X, plot_group, legend = FALSE){
 
   }))
 
-  plotdat <- dat %>%
-    group_by(.[[grouping]], .[[xaxis]]) %>%
-    summarize(cases = sum(n_cases)) %>%
+  plotdat <- dat |>
+    group_by(.[[grouping]], .[[xaxis]]) |>
+    summarize(cases = sum(n_cases)) |>
     ungroup()
 
   if(legend == TRUE){
 
-    tplot <- ggplot(plotdat, aes(x = as.Date(`.[[xaxis]]`), y = cases, color = as.factor(`.[[grouping]]`))) +
+    tplot <- ggplot(plotdat, aes(x = as.Date(`.[[xaxis]]`), y = cases,
+                                          color = as.factor(`.[[grouping]]`))) +
       geom_line() +
       ylab("New cases") +
       xlab("Week") +
       labs(color = str_to_title(plot_group)) +
-      theme(axis.title.x = element_text(size = 20),
+      gtheme(axis.title.x = element_text(size = 20),
             axis.title.y = element_text(size = 20),
             axis.text.x = element_text(size = 18),
             axis.text.y = element_text(size = 18),
@@ -198,7 +217,9 @@ plot_true_curves <- function(dat, X, plot_group, legend = FALSE){
 
   }else{
 
-    tplot <- ggplot(data = plotdat, aes(x = as.Date(`.[[xaxis]]`), y = cases, color = as.factor(`.[[grouping]]`))) +
+    tplot <- ggplot(data = plotdat,
+                    aes(x = as.Date(`.[[xaxis]]`),y = cases,
+                        color = as.factor(`.[[grouping]]`))) +
       geom_line() +
       ylab("New cases") +
       xlab("Week") +
@@ -225,6 +246,11 @@ plot_true_curves <- function(dat, X, plot_group, legend = FALSE){
 #' @param legend A logical object indicating whether a legend key should be shown. The default is `TRUE`.
 #'
 #' @return A ggplot of the masked epidemic curves over the x-axis variable and grouped by the plot_group variable.
+#'
+#' @import dplyr
+#' @import ggplot2
+#' @importFrom stringr str_to_title
+#'
 #' @export
 #'
 #' @examples
@@ -252,28 +278,30 @@ plot_mask_curves <- function(dat, maskdat, X, plot_group, legend = FALSE){
 
   }))
 
-  plotdat <- mask_dat %>%
-    group_by(.[[grouping1]], .[[xaxis]]) %>%
-    summarize(cases = sum(n_cases)) %>%
-    ungroup() %>%
-    group_by(.[[grouping1]]) %>%
-    filter(cases > 0) %>%
+  plotdat <- mask_dat |>
+    group_by(.[[grouping1]], .[[xaxis]]) |>
+    summarize(cases = sum(n_cases)) |>
+    ungroup() |>
+    group_by(.[[grouping1]]) |>
+    filter(cases > 0) |>
     ungroup()
 
-  plotdat_all <- dat %>%
-    group_by(.[[grouping2]], .[[xaxis]]) %>%
-    summarize(cases = sum(n_cases)) %>%
-    ungroup() %>%
-    group_by(.[[grouping2]]) %>%
-    filter(cases > 0) %>%
+  plotdat_all <- dat |>
+    group_by(.[[grouping2]], .[[xaxis]]) |>
+    summarize(cases = sum(n_cases)) |>
+    ungroup() |>
+    group_by(.[[grouping2]]) |>
+    filter(cases > 0) |>
     ungroup()
 
   if(legend == TRUE){
 
     tplot <- ggplot() +
-      geom_line(aes(x = as.Date(`.[[xaxis]]`), y = cases, color = as.factor(`.[[grouping1]]`)),
+      geom_line(aes(x = as.Date(`.[[xaxis]]`),
+                    y = cases, color = as.factor(`.[[grouping1]]`)),
                 data = plotdat) +
-      geom_line(aes(x = as.Date(`.[[xaxis]]`), y = cases, color = as.factor(`.[[grouping2]]`)),
+      geom_line(aes(x = as.Date(`.[[xaxis]]`), y = cases,
+                                      color = as.factor(`.[[grouping2]]`)),
                 data = plotdat_all, alpha = 0.2) +
       ylab("New cases") +
       xlab("Date") +
@@ -288,9 +316,11 @@ plot_mask_curves <- function(dat, maskdat, X, plot_group, legend = FALSE){
   }else{
 
     tplot <- ggplot() +
-      geom_line(aes(x = as.Date(`.[[xaxis]]`), y = cases, color = as.factor(`.[[grouping1]]`)),
+      geom_line(aes(x = as.Date(`.[[xaxis]]`), y = cases,
+                    color = as.factor(`.[[grouping1]]`)),
                 data = plotdat) +
-      geom_line(aes(x = as.Date(`.[[xaxis]]`), y = cases, color = as.factor(`.[[grouping2]]`)),
+      geom_line(aes(x = as.Date(`.[[xaxis]]`), y = cases,
+                    color = as.factor(`.[[grouping2]]`)),
                 data = plotdat_all, alpha = 0.2) +
       ylab("New cases") +
       xlab("Date") +
@@ -315,6 +345,10 @@ plot_mask_curves <- function(dat, maskdat, X, plot_group, legend = FALSE){
 #' @param iter_results A dataframe providing the combined model final size estimate for each location at each iteration of the combined model.
 #'
 #' @return A ggplot object of the bias curves over the iterations of the combined model
+#'
+#' @import dplyr
+#' @import ggplot2
+#'
 #' @export
 #'
 #' @examples
@@ -393,6 +427,13 @@ normmdl <- function(pars, times) {
 #' @param family A character object providing the error distribution. Currenly only `gaussian` (the default) and `poisson` are supported.
 #'
 #' @return A `SuperLearner` object containing the trained model
+#'
+#' @importFrom SuperLearner snowSuperLearner
+#' @importFrom parallel makeCluster
+#' @importFrom parallel clusterEvalQ
+#' @importFrom parallel clusterSetRNGStream
+#' @importFrom parallel stopCluster
+#'
 #' @export
 #'
 #' @examples
@@ -401,11 +442,6 @@ normmdl <- function(pars, times) {
 #'                      cores = 4, family = "gaussian)
 #'
 stat.mdl.sl.fit.para <- function(x, y, cores = 1, family = "gaussian") {
-  require(SuperLearner)
-  require(gam)
-  require(rpart)
-  require(randomForest)
-  require(parallel)
 
   cluster = makeCluster(cores)
   clusterEvalQ(cluster,
@@ -462,6 +498,9 @@ stat.mdl.sl.fit.para <- function(x, y, cores = 1, family = "gaussian") {
 #' @param family A character object providing the error distribution. Currenly only `gaussian` (the default) and `poisson` are supported.
 #'
 #' @return A `SuperLearner` object containing the trained model
+#'
+#' @importFrom SuperLearner SuperLearner
+#'
 #' @export
 #'
 #' @examples
@@ -469,10 +508,6 @@ stat.mdl.sl.fit.para <- function(x, y, cores = 1, family = "gaussian") {
 #' stat.mdl.sl.fit(x = my_vars, y = epi_size, family = "gaussian)
 #'
 stat.mdl.sl.fit <- function(x, y, family = "gaussian") {
-  require(SuperLearner)
-  require(gam)
-  require(rpart)
-  require(randomForest)
 
   if(family == "gaussian"){
 
@@ -511,6 +546,7 @@ stat.mdl.sl.fit <- function(x, y, family = "gaussian") {
 #' @param x A dataframe providing the variables/features for each location.
 #'
 #' @return A numeric vector of predicted epidemic final sizes for each location.
+#'
 #' @export
 #'
 #' @examples
@@ -540,6 +576,7 @@ stat.mdl.sl.pred <- function(mdl, x) {
 #' @param timestep A numeric object providing the timestep frequency, in number of days, i.e. one week would be `7` while one day would be `1`.
 #'
 #' @return A list object containing the new parameter values produced by the optimization (for each location), and the convergence results of the optimization.
+#'
 #' @export
 #'
 #' @examples
@@ -587,6 +624,9 @@ norm_em <- function(ecs, pop_N, strt_vals, errorfxn, penaltyfunc, priorval,
 #' - `params` Optimized model parameters for each iteration
 #' - `converged` Convergence results from the most recent iteration
 #' - `diff` Iteration difference between the last iteration and the one previous
+#'
+#'
+#'
 #' @export
 #'
 #' @examples
@@ -707,6 +747,12 @@ em_func_model <- function(epi_curves, covdat, pop_N, initK, epimdlfit,
 #'            - a dataframe with the updated parameter values
 #'            - a numeric object indicating whether the optimization
 #'              converged. A `0` indicates convergence.
+#'
+#' @importFrom parallel makeCluster
+#' @importFrom parallel stopCluster
+#' @importFrom doParallel registerDoParallel
+#' @importFrom foreach foreach
+#'
 #' @export
 #'
 #' @examples
@@ -804,6 +850,12 @@ fit_norm_model <- function(ecs, epi_mdl_func, epi_mdl_pars,
 #'            - a dataframe with the updated parameter values
 #'            - a numeric object indicating whether the optimization
 #'              converged. A `0` indicates convergence.
+#'
+#' @importFrom parallel makeCluster
+#' @importFrom parallel stopCluster
+#' @importFrom doParallel registerDoParallel
+#' @importFrom foreach foreach
+#'
 #' @export
 #'
 #' @examples
@@ -1075,6 +1127,9 @@ normpen <- function(estK, prior) {
 #'              allocated after each location.
 #'            - `inf_prevented` which provides the cumulative number of
 #'              infections/cases averted
+#'
+#' @import dplyr
+#'
 #' @export
 #'
 #' @examples
