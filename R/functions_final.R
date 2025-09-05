@@ -768,7 +768,7 @@ em_func_model <- function(epi_curves, covdat, pop_N, initK, epimdlfit,
 
     ## Fit the statistical model on this iteration
 
-    Kmech2 <- Kmech[iter,]/(population/1000)
+    Kmech2 <- Kmech[iter,]/(pop_N/1000)
 
     fitstatmdl <- statmdlfit(covdat, Kmech2, cores, stat.family)
     K[iter, ] <- statmdlpred(fitstatmdl, covdat) * (population/1000)
