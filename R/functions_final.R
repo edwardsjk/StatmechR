@@ -771,7 +771,7 @@ em_func_model <- function(epi_curves, covdat, pop_N, initK, epimdlfit,
     Kmech2 <- Kmech[iter,]/(pop_N/1000)
 
     fitstatmdl <- statmdlfit(covdat, Kmech2, cores, stat.family)
-    K[iter, ] <- statmdlpred(fitstatmdl, covdat) * (population/1000)
+    K[iter, ] <- statmdlpred(fitstatmdl, covdat) * (pop_N/1000)
 
     ## Check iter_diff
     if (iter > 1) {
