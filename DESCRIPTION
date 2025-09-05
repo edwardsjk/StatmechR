@@ -8,3 +8,16 @@ License: `use_gpl3_license()`
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
+Imports: 
+    bartMachine,
+    doParallel,
+    dplyr,
+    e1071,
+    foreach,
+    gam,
+    ggplot2,
+    lubridate,
+    randomForest,
+    rpart,
+    SuperLearner,
+    zoo

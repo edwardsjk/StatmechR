@@ -1,8 +1,25 @@
 library("devtools")
 library(roxygen2)
 setwd("/users/a/b/abagaels/StatMechR")
-document()
-#check()
-setwd("..")
-#install("StatmechR")
-getwd()
+#document()
+
+## Add dependencies
+
+# packages <- c("dplyr", "lubridate", "ggplot2", "zoo", "doParallel", "foreach",
+#               "SuperLearner", "gam", "rpart", "randomForest", "e1071",
+#               "bartMachine")
+#
+# for(i in packages){
+#
+#   use_package(i, type = "Imports")
+#
+# }
+#
+# document()
+
+
+
+
+
+
+
