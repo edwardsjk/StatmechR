@@ -751,9 +751,7 @@ fit_norm_model <- function(ecs, epi_mdl_func, epi_mdl_pars,
   cluster <- makeCluster(cores)
   registerDoParallel(cluster)
 
-  mod_res <- foreach(i = seq_along(ecs), .packages = "dplyr")%dopar%{
-
-    source("/users/a/b/abagaels/Codes/statmech/R/functions_final.R")
+  mod_res <- foreach(i = seq_along(ecs), .packages = c("dplyr", "StatmechR"))%dopar%{
 
     ec <- ecs[[i]]
     mdl_pars <- unname(unlist(epi_mdl_pars[i,]))
@@ -848,10 +846,7 @@ fit_epi_model <- function(ecs, N, epi_mdl_func, epi_mdl_pars,
   cluster <- makeCluster(cores)
   registerDoParallel(cluster)
 
-  mod_res <- foreach(i = seq_along(ecs), .packages = "dplyr")%dopar%{
-
-    source("/users/a/b/abagaels/Codes/statmech/R/functions_final.R")
-    source("/users/a/b/abagaels/Codes/statmech/R/temp_functions.R")
+  mod_res <- foreach(i = seq_along(ecs), .packages = c("dplyr", "StatmechR"))%dopar%{
 
     ec <- ecs[[i]]
     N2 <- N[i]
