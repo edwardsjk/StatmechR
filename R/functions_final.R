@@ -489,6 +489,74 @@ stat.mdl.sl.fit.para <- function(x, y, cores = 1, family = "gaussian") {
 
 }
 
+#' Train a SuperLearner ensemble in parallel
+#'
+#' @param x A dataframe providing the variables for each location.
+#' @param y A numeric vector providing the outcome for each location.
+#' @param cores A numeric object providing the number of cores to be used in the parallel process. The defaultt value is `1`.
+#' @param family A character object providing the error distribution. Currenly only `gaussian` (the default) and `poisson` are supported.
+#'
+#' @return A `SuperLearner` object containing the trained model
+#'
+#' @importFrom SuperLearner snowSuperLearner
+#' @importFrom parallel makeCluster
+#' @importFrom parallel clusterEvalQ
+#' @importFrom parallel clusterSetRNGStream
+#' @importFrom parallel stopCluster
+#'
+#' @export
+#'
+#' @examples
+#'
+#' stat.mdl.sl.fit.para(x = my_vars, y = epi_size,
+#'                      cores = 4, family = "gaussian)
+#'
+stat.mdl.sl.fit.para2 <- function(x, y, cores = 1, family = "gaussian") {
+
+  cluster = makeCluster(cores)
+  clusterEvalQ(cluster,
+               {library(SuperLearner)
+                library(gam)
+                library(rpart)
+                library(randomForest)
+                library(e1071) # For SL.svm
+                 options(mc.cores = 1)})
+  clusterSetRNGStream(cluster, 1)
+
+  if(family == "gaussian"){
+
+    rc <- snowSuperLearner(X = x, Y = y, newX = x, family = "gaussian", cluster = cluster,
+                           SL.library = list(c("SL.rpart", "screen.glmnet"),
+                                             c("SL.randomForest", "screen.glmnet"),
+                                             c("SL.glm", "screen.glmnet"),
+                                             c('SL.gam', "screen.glmnet"),
+                                             c("SL.glmnet", "screen.glmnet"),
+                                             c("SL.xgboost", "screen.glmnet"),
+                                             c("SL.svm", "screen.glmnet"),
+                                             "SL.glmnet"))
+
+    stopCluster(cluster)
+    gc()
+
+  }
+
+  if(family == "poisson"){
+
+    rc <- snowSuperLearner(X = x, Y = y, newX = x, family = "poisson",
+                           cluster = cluster,
+                           SL.library = list(c("SL.glm", "screen.glmnet"),
+                                             c('SL.gam', "screen.glmnet"),
+                                             c("SL.glmnet", "screen.glmnet"),
+                                             "SL.glmnet"))
+
+    stopCluster(cluster)
+    gc()
+  }
+
+  return(rc)
+
+}
+
 ##
 
 #' Title
