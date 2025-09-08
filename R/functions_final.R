@@ -623,7 +623,7 @@ stat.mdl.sl.fit <- function(x, y, family = "gaussian") {
 #'
 stat.mdl.sl.pred <- function(mdl, x) {
 
-  pred <- pmax(1, predict(mdl, onlySL = T, newdata = x)$pred)
+  pred <- pmax(0, predict(mdl, onlySL = T, newdata = x)$pred)
 
   return(pred)
 
@@ -1252,6 +1252,6 @@ stat.mdl.lin.fit <- function(x, y) {
 #' @export
 #'
 stat.mdl.lin.pred <- function(mdl, x) {
-  pred <- pmax(1, predict(mdl, newdata = x))
+  pred <- pmax(0, predict(mdl, newdata = x))
   return(pred)
 }
