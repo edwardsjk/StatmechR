@@ -23,3 +23,7 @@ Imports:
     stringr,
     SuperLearner,
     zoo
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

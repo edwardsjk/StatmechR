@@ -5,19 +5,21 @@ setwd("/users/a/b/abagaels/StatMechR")
 
 ## Add dependencies
 
-packages <- c("dplyr", "lubridate", "ggplot2", "zoo", "doParallel", "foreach",
-              "SuperLearner", "gam", "rpart", "randomForest", "e1071",
-              "bartMachine", "stringr", "parallel")
+# packages <- c("dplyr", "lubridate", "ggplot2", "zoo", "doParallel", "foreach",
+#               "SuperLearner", "gam", "rpart", "randomForest", "e1071",
+#               "bartMachine", "stringr", "parallel")
+#
+# for(i in packages){
+#
+#   use_package(i, type = "Imports")
+#
+# }
+#
+# document()
 
-for(i in packages){
+## Add vignettes
 
-  use_package(i, type = "Imports")
-
-}
-
-document()
-
-
+usethis::use_vignette("Vignette_1")
 
 
 
