@@ -181,7 +181,7 @@ get_trueK <- function(dat, groups){
 #'  plot_true_curves(dat = epidemic_data, X = "epiweek_date",
 #'                   plot_group = "district", legend = TRUE)
 #'
-plot_true_curves <- function(dat, X, plot_group, legend = FALSE){
+plot_true_curves <- function(dat, X, plot_group, cases, legend = FALSE){
 
   grouping <- unlist(lapply(plot_group, function(b){
 
@@ -197,7 +197,7 @@ plot_true_curves <- function(dat, X, plot_group, legend = FALSE){
 
   plotdat <- dat |>
     group_by(.[[grouping]], .[[xaxis]]) |>
-    summarize(cases = sum(n_cases)) |>
+    summarize(cases = sum(.[[cases]])) |>
     ungroup()
 
   if(legend == TRUE){
@@ -1157,7 +1157,6 @@ sqrtpen_diffuse <- function(estK, prior) {
   penalty <- dnorm(sqrt(abs((estK) - prior)), 0, 2, log = TRUE)
   return(penalty)
 }
-
 
 ##
 
