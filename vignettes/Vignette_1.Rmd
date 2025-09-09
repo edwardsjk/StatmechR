@@ -18,4 +18,23 @@ knitr::opts_chunk$set(
 library(StatmechR)
 ```
 
+```{r}
+data("vig1_data")
+```
+
+```{r}
+str(vig1_data)
+```
+```{r}
+#plot_true_curves(dat = vig1_data, X = "time", plot_group = "location", 
+                 #legend = FALSE)
+```
+
+
+
+
+
+
+
+
 
