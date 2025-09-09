@@ -804,9 +804,9 @@ em_func_model <- function(epi_curves, covdat, pop_N, initK, epimdlfit,
 #'
 #' @importFrom parallel makeCluster
 #' @importFrom parallel stopCluster
+#' @importFrom doParallel registerDoParallel
 #' @importFrom foreach foreach
-#'
-#' @import doParallel
+#' @importFrom foreach %dopar%
 #'
 #' @export
 #'
@@ -908,9 +908,9 @@ fit_norm_model <- function(ecs, epi_mdl_func, epi_mdl_pars,
 #'
 #' @importFrom parallel makeCluster
 #' @importFrom parallel stopCluster
+#' @importFrom doParallel registerDoParallel
 #' @importFrom foreach foreach
-#'
-#' @import doParallel
+#' @importFrom foreach %dopar%
 #'
 #' @export
 #'
