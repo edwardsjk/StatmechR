@@ -4,7 +4,7 @@
 \alias{plot_true_curves}
 \title{Plot the full epidemic curve}
 \usage{
-plot_true_curves(dat, X, plot_group, legend = FALSE)
+plot_true_curves(dat, X, plot_group, count, legend = FALSE)
 }
 \arguments{
 \item{dat}{A data frame providing the epidemic data over time for each location}
