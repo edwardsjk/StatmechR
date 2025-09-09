@@ -9,9 +9,11 @@ plot_true_curves(dat, X, plot_group, count, legend = FALSE)
 \arguments{
 \item{dat}{A data frame providing the epidemic data over time for each location}
 
-\item{X}{A character object providing the variable that should be on the x-axis}
+\item{X}{A character object providing the column name for the x-axis variable. This should be a variable that is in a Date format.}
 
-\item{plot_group}{A character objecting providing the grouping variable for the data}
+\item{plot_group}{A character objecting providing the colunm name for the variable that the data will be grouped by}
+
+\item{count}{A character object providing the column name for the count variable}
 
 \item{legend}{A logical object indicating whether a legend key should be shown. The default is \code{TRUE}}
 }
@@ -24,6 +26,6 @@ Plot the full epidemic curve
 \examples{
 
  plot_true_curves(dat = epidemic_data, X = "epiweek_date",
-                  plot_group = "district", legend = TRUE)
+                  plot_group = "district", count = "cases", legend = TRUE)
 
 }

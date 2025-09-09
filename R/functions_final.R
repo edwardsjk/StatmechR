@@ -161,8 +161,9 @@ get_trueK <- function(dat, groups){
 #' Plot the full epidemic curve
 #'
 #' @param dat A data frame providing the epidemic data over time for each location
-#' @param X A character object providing the variable that should be on the x-axis
-#' @param plot_group A character objecting providing the grouping variable for the data
+#' @param X A character object providing the column name for the x-axis variable. This should be a variable that is in a Date format.
+#' @param plot_group A character objecting providing the colunm name for the variable that the data will be grouped by
+#' @param count A character object providing the column name for the count variable
 #' @param legend A logical object indicating whether a legend key should be shown. The default is `TRUE`
 #'
 #' @return A ggplot of the epidemic curves over the x-axis variable and grouped by the plot_group variable
@@ -177,40 +178,28 @@ get_trueK <- function(dat, groups){
 #' @examples
 #'
 #'  plot_true_curves(dat = epidemic_data, X = "epiweek_date",
-#'                   plot_group = "district", legend = TRUE)
+#'                   plot_group = "district", count = "cases", legend = TRUE)
 #'
 plot_true_curves <- function(dat, X, plot_group, count, legend = FALSE){
 
-  grouping <- unlist(lapply(plot_group, function(b){
+  names(dat)[which(names(dat) == plot_group)] <- "grouping"
 
-    which(names(dat) == b)
+  names(dat)[which(names(dat) == X)] <- "xaxis"
 
-  }))
-
-  xaxis <- unlist(lapply(X, function(c){
-
-    which(names(dat) == c)
-
-  }))
-
-  case_count <- unlist(lapply(count, function(d){
-
-    which(names(data) == d)
-
-  }))
+  names(dat)[which(names(dat) == count)] <- "case_count"
 
   plotdat <- dat |>
-    group_by(.[[grouping]], .[[xaxis]]) |>
-    summarize(cases = sum(.[[case_count]])) |>
+    group_by(grouping, xaxis) |>
+    summarize(cases = sum(case_count)) |>
     ungroup()
 
   if(legend == TRUE){
 
-    tplot <- ggplot(plotdat, aes(x = as.Date(`.[[xaxis]]`), y = cases,
-                                          color = as.factor(`.[[grouping]]`))) +
+    tplot <- ggplot(plotdat, aes(x = as.Date(x_axis), y = cases,
+                                          color = as.factor(grouping))) +
       geom_line() +
       ylab("New cases") +
-      xlab("Week") +
+      xlab("Date") +
       labs(color = str_to_title(plot_group)) +
       gtheme(axis.title.x = element_text(size = 20),
             axis.title.y = element_text(size = 20),
@@ -222,11 +211,11 @@ plot_true_curves <- function(dat, X, plot_group, count, legend = FALSE){
   }else{
 
     tplot <- ggplot(data = plotdat,
-                    aes(x = as.Date(`.[[xaxis]]`),y = cases,
-                        color = as.factor(`.[[grouping]]`))) +
+                    aes(x = as.Date(xaxis),y = cases,
+                        color = as.factor(grouping))) +
       geom_line() +
       ylab("New cases") +
-      xlab("Week") +
+      xlab("Date") +
       theme(axis.title.x = element_text(size = 20),
             axis.title.y = element_text(size = 20),
             axis.text.x = element_text(size = 18),
@@ -238,6 +227,7 @@ plot_true_curves <- function(dat, X, plot_group, count, legend = FALSE){
   return(tplot)
 
 }
+
 
 ##
 
