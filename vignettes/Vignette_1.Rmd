@@ -26,8 +26,8 @@ data("vig1_data")
 str(vig1_data)
 ```
 ```{r}
-#plot_true_curves(dat = vig1_data, X = "time", plot_group = "location", 
-                 #legend = FALSE)
+plot_true_curves(dat = vig1_data, X = "time", plot_group = "location", 
+                 cases = "cases", legend = FALSE)
 ```
 
 

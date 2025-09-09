@@ -181,7 +181,7 @@ get_trueK <- function(dat, groups){
 #'  plot_true_curves(dat = epidemic_data, X = "epiweek_date",
 #'                   plot_group = "district", legend = TRUE)
 #'
-plot_true_curves <- function(dat, X, plot_group, cases, legend = FALSE){
+plot_true_curves <- function(dat, X, plot_group, count, legend = FALSE){
 
   grouping <- unlist(lapply(plot_group, function(b){
 
@@ -197,7 +197,7 @@ plot_true_curves <- function(dat, X, plot_group, cases, legend = FALSE){
 
   plotdat <- dat |>
     group_by(.[[grouping]], .[[xaxis]]) |>
-    summarize(cases = sum(.[[cases]])) |>
+    summarize(cases = sum(.[[count]])) |>
     ungroup()
 
   if(legend == TRUE){
