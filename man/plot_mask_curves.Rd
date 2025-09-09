@@ -4,16 +4,18 @@
 \alias{plot_mask_curves}
 \title{Plot the masked epidemic curves}
 \usage{
-plot_mask_curves(dat, maskdat, X, plot_group, legend = FALSE)
+plot_mask_curves(dat, maskdat, X, plot_group, count, legend = FALSE)
 }
 \arguments{
 \item{dat}{A data frame providing the full epidemic data over time for each location.}
 
 \item{maskdat}{A data frame providing the masked epidemic data over time for each location.}
 
-\item{X}{A character object providing the variable that should be on the x-axis.}
+\item{X}{A character object providing the column name for the xaxis variable. This variable should be in Date format}
 
-\item{plot_group}{A character objecting providing the grouping variable for the data.}
+\item{plot_group}{A character objecting providing the column name for the variable that the data will be grouped by.}
+
+\item{count}{A character object providing the column name for the count variable}
 
 \item{legend}{A logical object indicating whether a legend key should be shown. The default is \code{TRUE}.}
 }
@@ -26,6 +28,7 @@ Plot the masked epidemic curves
 \examples{
 
 plot_true_curves(dat = epidemic_data, maskdat = masked_data,
-                 X = "epiweek_date", plot_group = "district", legend = TRUE)
+                 X = "epiweek_date", plot_group = "district", count = "cases",
+                 legend = TRUE)
 
 }

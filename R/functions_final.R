@@ -235,8 +235,9 @@ plot_true_curves <- function(dat, X, plot_group, count, legend = FALSE){
 #'
 #' @param dat A data frame providing the full epidemic data over time for each location.
 #' @param maskdat A data frame providing the masked epidemic data over time for each location.
-#' @param X A character object providing the variable that should be on the x-axis.
-#' @param plot_group A character objecting providing the grouping variable for the data.
+#' @param X A character object providing the column name for the xaxis variable. This variable should be in Date format
+#' @param plot_group A character objecting providing the column name for the variable that the data will be grouped by.
+#' @param count A character object providing the column name for the count variable
 #' @param legend A logical object indicating whether a legend key should be shown. The default is `TRUE`.
 #'
 #' @return A ggplot of the masked epidemic curves over the x-axis variable and grouped by the plot_group variable.
@@ -250,52 +251,43 @@ plot_true_curves <- function(dat, X, plot_group, count, legend = FALSE){
 #' @examples
 #'
 #' plot_true_curves(dat = epidemic_data, maskdat = masked_data,
-#'                  X = "epiweek_date", plot_group = "district", legend = TRUE)
+#'                  X = "epiweek_date", plot_group = "district", count = "cases",
+#'                  legend = TRUE)
 #'
-plot_mask_curves <- function(dat, maskdat, X, plot_group, legend = FALSE){
+plot_mask_curves <- function(dat, maskdat, X, plot_group, count, legend = FALSE){
 
-  grouping1 <- unlist(lapply(plot_group, function(x){
+  names(dat)[which(names(dat) == plot_group)] <- "grouping"
+  names(dat)[which(names(dat) == X)] <- "xaxis"
+  names(dat)[which(names(dat) == count)] <- "case_count"
 
-    which(names(maskdat) == x)
-
-  }))
-
-  grouping2 <- unlist(lapply(plot_group, function(x){
-
-    which(names(dat) == x)
-
-  }))
-
-  xaxis <- unlist(lapply(X, function(c){
-
-    which(names(dat) == c)
-
-  }))
+  names(maskdat)[which(names(maskdat) == plot_group)] <- "grouping"
+  names(maskdat)[which(names(maskdat) == X)] <- "xaxis"
+  names(maskdat)[which(names(maskdat) == count)] <- "case_count"
 
   plotdat <- mask_dat |>
-    group_by(.[[grouping1]], .[[xaxis]]) |>
-    summarize(cases = sum(n_cases)) |>
+    group_by(grouping, xaxis) |>
+    summarize(cases = sum(case_count)) |>
     ungroup() |>
-    group_by(.[[grouping1]]) |>
+    group_by(grouping) |>
     filter(cases > 0) |>
     ungroup()
 
   plotdat_all <- dat |>
-    group_by(.[[grouping2]], .[[xaxis]]) |>
-    summarize(cases = sum(n_cases)) |>
+    group_by(grouping, xaxis) |>
+    summarize(cases = sum(case_count)) |>
     ungroup() |>
-    group_by(.[[grouping2]]) |>
+    group_by(grouping) |>
     filter(cases > 0) |>
     ungroup()
 
   if(legend == TRUE){
 
     tplot <- ggplot() +
-      geom_line(aes(x = as.Date(`.[[xaxis]]`),
-                    y = cases, color = as.factor(`.[[grouping1]]`)),
+      geom_line(aes(x = as.Date(xaxis),
+                    y = cases, color = as.factor(grouping)),
                 data = plotdat) +
-      geom_line(aes(x = as.Date(`.[[xaxis]]`), y = cases,
-                                      color = as.factor(`.[[grouping2]]`)),
+      geom_line(aes(x = as.Date(xaxis), y = cases,
+                                      color = as.factor(grouping2)),
                 data = plotdat_all, alpha = 0.2) +
       ylab("New cases") +
       xlab("Date") +
@@ -310,11 +302,11 @@ plot_mask_curves <- function(dat, maskdat, X, plot_group, legend = FALSE){
   }else{
 
     tplot <- ggplot() +
-      geom_line(aes(x = as.Date(`.[[xaxis]]`), y = cases,
-                    color = as.factor(`.[[grouping1]]`)),
+      geom_line(aes(x = as.Date(xaxis), y = cases,
+                    color = as.factor(grouping1)),
                 data = plotdat) +
-      geom_line(aes(x = as.Date(`.[[xaxis]]`), y = cases,
-                    color = as.factor(`.[[grouping2]]`)),
+      geom_line(aes(x = as.Date(xaxis), y = cases,
+                    color = as.factor(grouping)),
                 data = plotdat_all, alpha = 0.2) +
       ylab("New cases") +
       xlab("Date") +
@@ -812,8 +804,9 @@ em_func_model <- function(epi_curves, covdat, pop_N, initK, epimdlfit,
 #'
 #' @importFrom parallel makeCluster
 #' @importFrom parallel stopCluster
-#' @importFrom doParallel registerDoParallel
 #' @importFrom foreach foreach
+#'
+#' @import doParallel
 #'
 #' @export
 #'
@@ -915,8 +908,9 @@ fit_norm_model <- function(ecs, epi_mdl_func, epi_mdl_pars,
 #'
 #' @importFrom parallel makeCluster
 #' @importFrom parallel stopCluster
-#' @importFrom doParallel registerDoParallel
 #' @importFrom foreach foreach
+#'
+#' @import doParallel
 #'
 #' @export
 #'

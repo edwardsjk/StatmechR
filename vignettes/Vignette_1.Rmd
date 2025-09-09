@@ -31,8 +31,40 @@ plot_true_curves(dat = vig1_data, X = "time", plot_group = "location",
                  count = "cases", legend = FALSE)
 ```
 
+```{r}
+mask_day <- 50
 
+mask_dat <- vig1_data %>% 
+  filter(time <= mask_day & is.na(time) == F) %>% 
+  group_by(location) %>% 
+  arrange(time) %>% 
+  mutate(first_day = which(cases > 0)[1], 
+         epi_t = time - (first_day - 1), 
+         c_cases = cumsum(cases)) %>% 
+  ungroup() %>% 
+  arrange(location, time) %>% 
+  select(-time, -first_day) %>% 
+  mutate(epi_t = ifelse(is.na(epi_t) == T, 0, epi_t))
+```
 
+```{r}
+ecs <- split(mask_dat$cases, f = mask_dat$location)
+curcases <- sapply(ecs, sum)
+```
+
+```{r}
+enddate <- max(vig1_data$time, na.rm = T)
+tau <- round(max(vig1_data$time, na.rm = T) - mask_day)
+```
+
+```{r}
+starting_vals <- data.frame(K = (pmax(5, 2 * sapply(ecs, sum))), #final size
+                            pt = (sapply(ecs, length)), # peak time
+                            sp = log(sapply(ecs, length) / 5))
+
+epimdl <- fit_norm_model(ecs2, normmdl, starting_vals, norm_error2, cores = 4, 
+                         tau = tau)
+```
 
 
 
