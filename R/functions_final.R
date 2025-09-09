@@ -168,11 +168,9 @@ get_trueK <- function(dat, groups){
 #' @return A ggplot of the epidemic curves over the x-axis variable and grouped by the plot_group variable
 #'
 #' @importFrom stringr str_to_title
-#' @importFrom dplyr group_by
-#' @importFrom dplyr summarize
-#' @importFrom dplyr ungroup
 #'
 #' @import ggplot2
+#' @import dplyr
 #'
 #' @export
 #'
@@ -195,9 +193,15 @@ plot_true_curves <- function(dat, X, plot_group, count, legend = FALSE){
 
   }))
 
+  case_count <- unlist(lapply(count, function(d){
+
+    which(names(data) == d)
+
+  }))
+
   plotdat <- dat |>
     group_by(.[[grouping]], .[[xaxis]]) |>
-    summarize(cases = sum(.[[count]])) |>
+    summarize(cases = sum(.[[case_count]])) |>
     ungroup()
 
   if(legend == TRUE){
