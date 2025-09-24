@@ -978,7 +978,7 @@ fit_epi_model <- function(ecs, N, epi_mdl_func, epi_mdl_pars,
 
     curves <- epi_mdl_func(N2, tmp$par[2:length(tmp$par)], timestep, tau + length(ec))
 
-    Kmech <- sum(curves$incidence)
+    Kmech <- sum(as.data.frame(curves)$incident)
 
     new_pars <- c(Kmech, tmp$par[2:length(tmp$par)])
 
