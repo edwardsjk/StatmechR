@@ -62,8 +62,35 @@ starting_vals <- data.frame(K = (pmax(5, 2 * sapply(ecs, sum))), #final size
                             pt = (sapply(ecs, length)), # peak time
                             sp = log(sapply(ecs, length) / 5))
 
-epimdl <- fit_norm_model(ecs2, normmdl, starting_vals, norm_error2, cores = 4, 
+epimdl <- fit_norm_model(ecs, normmdl, starting_vals, norm_error2, cores = 4, 
                          tau = tau)
+
+k_mech <- round(as.data.frame(do.call(rbind, lapply(epimdl, function(x){x[[1]]})))[,1])
+k_mech
+```
+
+```{r}
+cov_dat <- mask_dat %>% 
+  distinct(.keep_all = T) %>% 
+  filter(epi_t >= 0) %>% 
+  mutate(c_cases_1000 = c_cases/(pop_size/1000))
+
+xvars_wt <- cov_dat %>% 
+  select(-district, -n_cases, -c_cases, -c_cases_1000, -pop_size)
+
+outcome = cov_dat$c_cases_1000
+
+mod <- stat.mdl.sl.fit.para(xvars_wt, outcome, cores = 4, family = "gaussian")
+
+xvars_pred <- mask_dat %>%
+  distinct(.keep_all = T) %>% 
+  group_by(district) %>% 
+  filter(epi_t == max(epi_t)) %>% 
+  ungroup() %>% 
+  select(-district, -n_cases, -c_cases, -pop_size) %>% 
+  mutate(epi_t = epi_t + tau)
+
+k_stat <- stat.mdl.sl.pred(mod, xvars_pred)
 ```
 
 
