@@ -17,3 +17,8 @@ A numeric object representing the prior penalty error
 \description{
 Diffuse square root penalty term
 }
+\examples{
+
+sqrt_diffuse(estK = pars[1], prior = kstat[1])
+
+}

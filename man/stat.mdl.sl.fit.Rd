@@ -19,3 +19,8 @@ A \code{SuperLearner} object containing the trained model
 \description{
 Title
 }
+\examples{
+
+stat.mdl.sl.fit(x = my_vars, y = epi_size, family = "gaussian")
+
+}

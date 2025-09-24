@@ -425,7 +425,7 @@ normmdl <- function(pars, times) {
 #' @examples
 #'
 #' stat.mdl.sl.fit.para(x = my_vars, y = epi_size,
-#'                      cores = 4, family = "gaussian)
+#'                      cores = 4, family = "gaussian")
 #'
 stat.mdl.sl.fit.para <- function(x, y, cores = 1, family = "gaussian") {
 
@@ -495,7 +495,7 @@ stat.mdl.sl.fit.para <- function(x, y, cores = 1, family = "gaussian") {
 #' @examples
 #'
 #' stat.mdl.sl.fit.para(x = my_vars, y = epi_size,
-#'                      cores = 4, family = "gaussian)
+#'                      cores = 4, family = "gaussian")
 #'
 stat.mdl.sl.fit.para2 <- function(x, y, cores = 1, family = "gaussian") {
 
@@ -559,7 +559,7 @@ stat.mdl.sl.fit.para2 <- function(x, y, cores = 1, family = "gaussian") {
 #'
 #' @examples
 #'
-#' stat.mdl.sl.fit(x = my_vars, y = epi_size, family = "gaussian)
+#' stat.mdl.sl.fit(x = my_vars, y = epi_size, family = "gaussian")
 #'
 stat.mdl.sl.fit <- function(x, y, family = "gaussian") {
 
@@ -1125,6 +1125,9 @@ norm_error2 <- function(ec, pred, estK){
 #' @export
 #'
 #' @examples
+#'
+#' sqrtpen(estK = pars[1], prior = kstat[1])
+#'
 sqrtpen <- function(estK, prior) {
   penalty <- dnorm(sqrt(abs((estK) - prior)), 0, 1, log = TRUE)
   return(penalty)
@@ -1141,6 +1144,9 @@ sqrtpen <- function(estK, prior) {
 #' @export
 #'
 #' @examples
+#'
+#' sqrt_diffuse(estK = pars[1], prior = kstat[1])
+#'
 sqrtpen_diffuse <- function(estK, prior) {
   penalty <- dnorm(sqrt(abs((estK) - prior)), 0, 2, log = TRUE)
   return(penalty)
@@ -1157,6 +1163,9 @@ sqrtpen_diffuse <- function(estK, prior) {
 #' @export
 #'
 #' @examples
+#'
+#' normpen(estk = pars[1], prior = kstat[1])
+#'
 normpen <- function(estK, prior) {
   penalty <- dnorm((abs((estK) - prior)), 0, 1, log = TRUE)
   return(penalty)

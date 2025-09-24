@@ -17,3 +17,8 @@ A numeric object representing the prior penalty error
 \description{
 Square root penalty term
 }
+\examples{
+
+sqrtpen(estK = pars[1], prior = kstat[1])
+
+}

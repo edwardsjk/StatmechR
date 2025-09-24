@@ -21,3 +21,9 @@ A \code{SuperLearner} object containing the trained model
 \description{
 Train a SuperLearner ensemble in parallel
 }
+\examples{
+
+stat.mdl.sl.fit.para(x = my_vars, y = epi_size,
+                     cores = 4, family = "gaussian")
+
+}

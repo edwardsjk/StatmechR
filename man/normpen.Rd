@@ -17,3 +17,8 @@ A numeric object representing the prior penalty error
 \description{
 Gaussian penalty term
 }
+\examples{
+
+normpen(estk = pars[1], prior = kstat[1])
+
+}
