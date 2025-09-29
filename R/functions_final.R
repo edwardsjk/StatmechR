@@ -138,13 +138,15 @@ compute_Rs <- function(covs, b0 = log(2), sd = .1, b1 = log(.75),
 #'
 #'  get_trueK(dat = epidemic_data, groups = "district")
 #'
-get_trueK <- function(dat, groups){
+get_trueK <- function(dat, case_col, groups){
 
   grouping <- lapply(groups, function(x){
 
     which(names(dat) == x)
 
   })
+
+  names(dat)[which(names(dat) == case_col)] <- "n_cases"
 
   K <- dat |>
     ungroup() |>
