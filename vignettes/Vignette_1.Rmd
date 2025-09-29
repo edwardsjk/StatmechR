@@ -20,19 +20,24 @@ library(dplyr)
 ```
 
 ```{r}
-data("vig1_data")
+load("/users/a/b/abagaels/StatMechR/data/vig1_data.RData")
+#data("vig1_data")
 ```
 
 ```{r}
 str(vig1_data)
 ```
 ```{r}
+trueK <- get_trueK(vig1_data, case_col = "cases", groups = "location")
+```
+
+```{r}
 plot_true_curves(dat = vig1_data, X = "time", plot_group = "location", 
                  count = "cases", legend = FALSE)
 ```
 
 ```{r}
-mask_day <- 50
+mask_day <- 100
 
 mask_dat <- vig1_data %>% 
   filter(time <= mask_day & is.na(time) == F) %>% 
@@ -45,16 +50,21 @@ mask_dat <- vig1_data %>%
   arrange(location, time) %>% 
   select(-time, -first_day) %>% 
   mutate(epi_t = ifelse(is.na(epi_t) == T, 0, epi_t))
+
+head(mask_dat, 10)
 ```
 
 ```{r}
 ecs <- split(mask_dat$cases, f = mask_dat$location)
 curcases <- sapply(ecs, sum)
+population <- vig1_data$pop_size[which(vig1_data$time == 1)]
 ```
 
 ```{r}
 enddate <- max(vig1_data$time, na.rm = T)
 tau <- round(max(vig1_data$time, na.rm = T) - mask_day)
+
+tau
 ```
 
 ```{r}
@@ -76,7 +86,7 @@ cov_dat <- mask_dat %>%
   mutate(c_cases_1000 = c_cases/(pop_size/1000))
 
 xvars_wt <- cov_dat %>% 
-  select(-district, -n_cases, -c_cases, -c_cases_1000, -pop_size)
+  select(-location, -cases, -c_cases, -c_cases_1000, -pop_size)
 
 outcome = cov_dat$c_cases_1000
 
@@ -84,17 +94,46 @@ mod <- stat.mdl.sl.fit.para(xvars_wt, outcome, cores = 4, family = "gaussian")
 
 xvars_pred <- mask_dat %>%
   distinct(.keep_all = T) %>% 
-  group_by(district) %>% 
+  group_by(location) %>% 
   filter(epi_t == max(epi_t)) %>% 
   ungroup() %>% 
-  select(-district, -n_cases, -c_cases, -pop_size) %>% 
+  select(-location, -cases, -c_cases, -pop_size) %>% 
   mutate(epi_t = epi_t + tau)
 
 k_stat <- stat.mdl.sl.pred(mod, xvars_pred)
+k_stat2 <- k_stat * (population/1000)
+k_stat2
+```
+
+```{r}
+comb_vars <- cov_dat %>% 
+  group_by(location) %>% 
+  slice(1) %>% 
+  ungroup() %>% 
+  select(-cases, -c_cases, -epi_t, -location, -pop_size)
+```
+
+```{r, message=FALSE}
+starting_vals <- data.frame(K = k_stat2, #final size
+                            pt = (sapply(ecs, length)), # peak time
+                            sp = log(sapply(ecs, length) / 5))
+
+k_combinf <- em_func_model(ecs, comb_vars, population, initK = k_stat2, 
+                           norm_em, starting_vals, norm_error2, poispen, 
+                           stat.mdl.sl.fit.para, stat.mdl.sl.pred, 
+                           max.iter = 500, threshold = 1, cores = 4,
+                           stat.family = "gaussian", tau = tau)
 ```
 
 
-
+```{r}
+data.frame(loc = trueK$location, 
+                  true = trueK$K, 
+                  obs = sapply(ecs, "sum"), 
+                  mech = k_mech, 
+                  stat = k_stat2, 
+                  combinf = k_combinf$K)
+```
 
 
 
