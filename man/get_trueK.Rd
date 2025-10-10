@@ -4,7 +4,7 @@
 \alias{get_trueK}
 \title{Extract the final epidemic size from the epidemic data}
 \usage{
-get_trueK(dat, groups)
+get_trueK(dat, case_col, groups)
 }
 \arguments{
 \item{dat}{A data frame providing the epidemic cases over time for each location}

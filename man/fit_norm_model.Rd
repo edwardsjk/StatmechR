@@ -12,7 +12,6 @@ fit_norm_model(
   priorfunc = NULL,
   prior = NULL,
   cores,
-  tau,
   timestep = NULL
 )
 }
@@ -31,9 +30,9 @@ fit_norm_model(
 
 \item{cores}{A numeric object providing the number of cores that should be assigned to run the function in parallel.}
 
-\item{tau}{A character object providing the number of timesteps that should be simulated for the mechanistic model prediction.}
-
 \item{timestep}{A numeric object providng the number of days in each time step. For example, a weekly time step would be \code{timestep = 7}}
+
+\item{tau}{A character object providing the number of timesteps that should be simulated for the mechanistic model prediction.}
 }
 \value{
 A list object consisting of, for each location:
