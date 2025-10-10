@@ -34,12 +34,12 @@
 #'                education = "low")
 #'
 sim_covariates <- function(N,
-                            poverty = "average",
-                            climate = c(0.33, 0.33, 0.33),
-                            temperature = c(30, 20, 35),
-                            water_san = "average",
-                            stand_water = "average",
-                            education = "average") {
+                           poverty = "average",
+                           climate = c(0.33, 0.33, 0.33),
+                           temperature = c(30, 20, 35),
+                           water_san = "average",
+                           stand_water = "average",
+                           education = "average") {
 
   watsan_loc <- ifelse(water_san == "average", 0, ifelse(water_san == "low", 1.5, -1.5))
 
@@ -198,17 +198,17 @@ plot_true_curves <- function(dat, X, plot_group, count, legend = FALSE){
   if(legend == TRUE){
 
     tplot <- ggplot(plotdat, aes(x = as.Date(x_axis), y = cases,
-                                          color = as.factor(grouping))) +
+                                 color = as.factor(grouping))) +
       geom_line() +
       ylab("New cases") +
       xlab("Date") +
       labs(color = str_to_title(plot_group)) +
       gtheme(axis.title.x = element_text(size = 20),
-            axis.title.y = element_text(size = 20),
-            axis.text.x = element_text(size = 18),
-            axis.text.y = element_text(size = 18),
-            legend.title = element_text(size = 20),
-            legend.text = element_text(size = 18))
+             axis.title.y = element_text(size = 20),
+             axis.text.x = element_text(size = 18),
+             axis.text.y = element_text(size = 18),
+             legend.title = element_text(size = 20),
+             legend.text = element_text(size = 18))
 
   }else{
 
@@ -289,7 +289,7 @@ plot_mask_curves <- function(dat, maskdat, X, plot_group, count, legend = FALSE)
                     y = cases, color = as.factor(grouping)),
                 data = plotdat) +
       geom_line(aes(x = as.Date(xaxis), y = cases,
-                                      color = as.factor(grouping2)),
+                    color = as.factor(grouping2)),
                 data = plotdat_all, alpha = 0.2) +
       ylab("New cases") +
       xlab("Date") +
@@ -504,10 +504,10 @@ stat.mdl.sl.fit.para2 <- function(x, y, cores = 1, family = "gaussian") {
   cluster = makeCluster(cores)
   clusterEvalQ(cluster,
                {library(SuperLearner)
-                library(gam)
-                library(rpart)
-                library(randomForest)
-                library(e1071) # For SL.svm
+                 library(gam)
+                 library(rpart)
+                 library(randomForest)
+                 library(e1071) # For SL.svm
                  options(mc.cores = 1)})
   clusterSetRNGStream(cluster, 1)
 
@@ -721,7 +721,7 @@ em_func_model <- function(epi_curves, covdat, pop_N, initK, epimdlfit,
 
       lastK <- K[iter - 1, ]
 
-      } # otherwise, lastK is K from last iter
+    } # otherwise, lastK is K from last iter
 
     ## Force lastK and first parameter to be >= obs
 
@@ -821,7 +821,7 @@ em_func_model <- function(epi_curves, covdat, pop_N, initK, epimdlfit,
 #'
 fit_norm_model <- function(ecs, epi_mdl_func, epi_mdl_pars,
                            error_func, priorfunc = NULL, prior = NULL,
-                           cores, tau, timestep = NULL) {
+                           cores, timestep = NULL) {
 
   obj_fxn <- function(pars, ec, priorfunc = NULL, prior = NULL) {
 
@@ -838,9 +838,7 @@ fit_norm_model <- function(ecs, epi_mdl_func, epi_mdl_pars,
       err <- error_func(ec, pred_curve, (pars[1])) +
         priorfunc((pars[1]), prior)
 
-    }
-
-    if(is.null(priorfunc)) {
+    }else{
 
       err <- error_func(ec, pred_curve, (pars[1]))
 
@@ -851,40 +849,43 @@ fit_norm_model <- function(ecs, epi_mdl_func, epi_mdl_pars,
 
   }
 
-  cluster <- makeCluster(cores)
-  registerDoParallel(cluster)
+  mod_res <- list()
 
-  mod_res <- foreach(i = seq_along(ecs), .packages = c("dplyr", "StatmechR"))%dopar%{
+  for(i in seq_along(ecs)){
 
     ec <- ecs[[i]]
+
     mdl_pars <- unname(unlist(epi_mdl_pars[i,]))
 
-    if (!is.null(priorfunc)) {
+    if(length(ec) == 1 & ec[1] == 0){
 
-      tmp <- optim(mdl_pars, obj_fxn, ec = ec, priorfunc = priorfunc,
-                   prior = prior[i], method = "SANN", control = list(maxit = 1000))
+      mod_res[[i]] <- list(mdl_pars, NA)
+
+    }else{
+
+      if (!is.null(priorfunc)) {
+
+        tmp <- optim(mdl_pars, obj_fxn, ec = ec, priorfunc = priorfunc,
+                     prior = prior[i])
+
+      }else{
+
+        tmp <- optim(mdl_pars, obj_fxn, ec = ec)
+
+      }
+
+      converged <- tmp$convergence
+
+      new_pars <- tmp$par
+
+      mod_res[[i]] <- list(new_pars, converged)
 
     }
-
-    if (is.null(priorfunc)) {
-
-      tmp <- optim(mdl_pars, obj_fxn, ec = ec, method = "SANN", control = list(maxit = 1000))
-
-    }
-
-    converged <- tmp$convergence
-
-    new_pars <- tmp$par
-
-    return(list(new_pars, converged))
-
-    gc()
 
   }
 
-  stopCluster(cl = cluster)
-
   return(mod_res)
+
 }
 
 ##
@@ -1204,7 +1205,7 @@ normpen <- function(estK, prior) {
 #'                       dat = my_dataset, maxvax = 3e6)
 #'
 get_infPrevented_beta <- function(method.pred, method.name, dat = flat_res,
-                                   maxvax = 3e6) {
+                                  maxvax = 3e6) {
   res <- dat %>%
     ungroup() %>%
     mutate(method = method.name,
