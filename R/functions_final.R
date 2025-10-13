@@ -795,20 +795,11 @@ em_func_model <- function(epi_curves, covdat, pop_N, initK, epimdlfit,
 #' @param error_func A function object providing the error calculation for the optimization of the mechanistic model.
 #' @param priorfunc A function object providing the penalty calculation used to penalize the mechanistic model optimization towards the results from the statistical model.
 #' @param prior A numeric vector providing the results from the statistical model that the `priorfunc` will penalize towards.
-#' @param cores A numeric object providing the number of cores that should be assigned to run the function in parallel.
-#' @param tau A character object providing the number of timesteps that should be simulated for the mechanistic model prediction.
-#' @param timestep A numeric object providng the number of days in each time step. For example, a weekly time step would be `timestep = 7`
 #'
 #' @returns A list object consisting of, for each location:
 #'            - a dataframe with the updated parameter values
 #'            - a numeric object indicating whether the optimization
 #'              converged. A `0` indicates convergence.
-#'
-#' @importFrom parallel makeCluster
-#' @importFrom parallel stopCluster
-#' @importFrom doParallel registerDoParallel
-#' @importFrom foreach foreach
-#' @importFrom foreach %dopar%
 #'
 #' @export
 #'
@@ -816,12 +807,10 @@ em_func_model <- function(epi_curves, covdat, pop_N, initK, epimdlfit,
 #'
 #' fit_norm_model(ecs = my_curves, epi_mdl_func = my_epi_model,
 #'                epi_mdl_pars = starting_values, error_func = norm_error,
-#'                prior_func = NULL, prior = NULL, cores = 1, tau = 70,
-#'                timestep = NULL)
+#'                prior_func = NULL, prior = NULL)
 #'
 fit_norm_model <- function(ecs, epi_mdl_func, epi_mdl_pars,
-                           error_func, priorfunc = NULL, prior = NULL,
-                           cores, timestep = NULL) {
+                           error_func, priorfunc = NULL, prior = NULL) {
 
   obj_fxn <- function(pars, ec, priorfunc = NULL, prior = NULL) {
 
@@ -900,7 +889,6 @@ fit_norm_model <- function(ecs, epi_mdl_func, epi_mdl_pars,
 #' @param error_func A function object providing the error calculation for the optimization of the mechanistic model.
 #' @param priorfunc A function object providing the penalty calculation used to penalize the mechanistic model optimization towards the results from the statistical model.
 #' @param prior A numeric vector providing the results from the statistical model that the `priorfunc` will penalize towards.
-#' @param cores A numeric object providing the number of cores that should be assigned to run the function in parallel.
 #' @param tau A character object providing the number of timesteps that should be simulated for the mechanistic model prediction.
 #' @param timestep A numeric object providng the number of days in each time step. For example, a weekly time step would be `timestep = 7`
 #'
@@ -908,12 +896,6 @@ fit_norm_model <- function(ecs, epi_mdl_func, epi_mdl_pars,
 #'            - a dataframe with the updated parameter values
 #'            - a numeric object indicating whether the optimization
 #'              converged. A `0` indicates convergence.
-#'
-#' @importFrom parallel makeCluster
-#' @importFrom parallel stopCluster
-#' @importFrom doParallel registerDoParallel
-#' @importFrom foreach foreach
-#' @importFrom foreach %dopar%
 #'
 #' @export
 #'
@@ -925,7 +907,7 @@ fit_norm_model <- function(ecs, epi_mdl_func, epi_mdl_pars,
 #'              timestep = 7)
 #'
 fit_epi_model <- function(ecs, N, epi_mdl_func, epi_mdl_pars,
-                          error_func, priorfunc = NULL, prior = NULL, cores,
+                          error_func, priorfunc = NULL, prior = NULL,
                           tau, timestep) {
 
   obj_fxn <- function(pars, ec, N, priorfunc = NULL, prior = NULL, timestep) {
@@ -942,9 +924,8 @@ fit_epi_model <- function(ecs, N, epi_mdl_func, epi_mdl_pars,
 
       err <- error_func(ec, pred_curve$incident, pars[1]) +
         priorfunc((pars[1]), prior)
-    }
 
-    if(is.null(priorfunc)) {
+    }else{
 
       err <- error_func(ec, pred_curve$incident, pars[1])
 
@@ -954,10 +935,9 @@ fit_epi_model <- function(ecs, N, epi_mdl_func, epi_mdl_pars,
 
   }
 
-  cluster <- makeCluster(cores)
-  registerDoParallel(cluster)
+  mod_res <- list()
 
-  mod_res <- foreach(i = seq_along(ecs), .packages = c("dplyr", "StatmechR"))%dopar%{
+  for(i in seq_along(ecs)){
 
     ec <- ecs[[i]]
     N2 <- N[i]
@@ -966,14 +946,11 @@ fit_epi_model <- function(ecs, N, epi_mdl_func, epi_mdl_pars,
     if (!is.null(priorfunc)) {
 
       tmp <- optim(mdl_pars, obj_fxn, ec = ec, N = N2, priorfunc = priorfunc,
-                   prior = prior[i], timestep = timestep, method = "SANN", control = list(maxit = 1000))
+                   prior = prior[i], timestep = timestep)
 
-    }
+    }else{
 
-    if (is.null(priorfunc)) {
-
-      tmp <- optim(mdl_pars, obj_fxn, ec = ec, N = N2, timestep = timestep,
-                   method = "SANN", control = list(maxit = 1000))
+      tmp <- optim(mdl_pars, obj_fxn, ec = ec, N = N2, timestep = timestep)
 
     }
 
@@ -985,13 +962,9 @@ fit_epi_model <- function(ecs, N, epi_mdl_func, epi_mdl_pars,
 
     new_pars <- c(Kmech, tmp$par[2:length(tmp$par)])
 
-    return(list(new_pars, converged))
-
-    gc()
+    mod_res[[i]] <- list(new_pars, converged)
 
   }
-
-  stopCluster(cl = cluster)
 
   return(mod_res)
 }

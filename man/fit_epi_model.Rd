@@ -12,7 +12,6 @@ fit_epi_model(
   error_func,
   priorfunc = NULL,
   prior = NULL,
-  cores,
   tau,
   timestep
 )
@@ -31,8 +30,6 @@ fit_epi_model(
 \item{priorfunc}{A function object providing the penalty calculation used to penalize the mechanistic model optimization towards the results from the statistical model.}
 
 \item{prior}{A numeric vector providing the results from the statistical model that the \code{priorfunc} will penalize towards.}
-
-\item{cores}{A numeric object providing the number of cores that should be assigned to run the function in parallel.}
 
 \item{tau}{A character object providing the number of timesteps that should be simulated for the mechanistic model prediction.}
 

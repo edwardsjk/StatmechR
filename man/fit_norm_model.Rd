@@ -10,9 +10,7 @@ fit_norm_model(
   epi_mdl_pars,
   error_func,
   priorfunc = NULL,
-  prior = NULL,
-  cores,
-  timestep = NULL
+  prior = NULL
 )
 }
 \arguments{
@@ -27,12 +25,6 @@ fit_norm_model(
 \item{priorfunc}{A function object providing the penalty calculation used to penalize the mechanistic model optimization towards the results from the statistical model.}
 
 \item{prior}{A numeric vector providing the results from the statistical model that the \code{priorfunc} will penalize towards.}
-
-\item{cores}{A numeric object providing the number of cores that should be assigned to run the function in parallel.}
-
-\item{timestep}{A numeric object providng the number of days in each time step. For example, a weekly time step would be \code{timestep = 7}}
-
-\item{tau}{A character object providing the number of timesteps that should be simulated for the mechanistic model prediction.}
 }
 \value{
 A list object consisting of, for each location:
@@ -47,7 +39,6 @@ Optimization of a gaussian epidemic model
 
 fit_norm_model(ecs = my_curves, epi_mdl_func = my_epi_model,
                epi_mdl_pars = starting_values, error_func = norm_error,
-               prior_func = NULL, prior = NULL, cores = 1, tau = 70,
-               timestep = NULL)
+               prior_func = NULL, prior = NULL)
 
 }
