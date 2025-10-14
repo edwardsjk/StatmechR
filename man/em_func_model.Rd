@@ -17,9 +17,9 @@ em_func_model(
   statmdlpred,
   threshold = 20,
   max.iter = 100,
-  cores,
+  cores = NULL,
   stat.family = "gaussian",
-  tau = 52,
+  tau = NULL,
   timestep = NULL
 )
 }
@@ -53,9 +53,9 @@ em_func_model(
 
 \item{stat.family}{A character object providing the error distribution family for the statistical model. The options are \code{"gaussian"} and \code{"poisson"}.}
 
-\item{tau}{A character object providing the number of timesteps that should be simulated for the mechanistic model prediction.}
+\item{tau}{A character object providing the number of timesteps that should be simulated for the mechanistic model prediction. If using the gaussian model, allow tau to be the default \code{NULL}.}
 
-\item{timestep}{A numeric object providng the number of days in each time step. For example, a weekly time step would be \code{timwestep = 7}}
+\item{timestep}{A numeric object providng the number of days in each time step. For example, a weekly time step would be \code{timwestep = 7}.If using the gaussian model, allow timestep to be the default \code{NULL}.}
 }
 \value{
 A list object containing the following objects:
@@ -75,10 +75,11 @@ Combined mechanistic and statistic iterative model
 }
 \examples{
 
-em_func_model(epi_curves = my_curves, covdat = env_data, init_K = kmech,
+em_func_model(epi_curves = my_curves, pop_N = population,
+              covdat = env_data, init_K = kmech, epimdlfit = my_model,
               starting_vals = values, error_func = norm_error,
               statmdlfit = my_stat_fit, statmdlpred = my_stat_pred,
               threshold = 5, max.iter = 1000, cores = 20,
-              stat.family = "gaussian", tau = 52, timestep = 7)
+              stat.family = "gaussian", tau = NULL, timestep = NULL)
 
 }

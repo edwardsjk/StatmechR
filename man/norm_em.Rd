@@ -4,17 +4,7 @@
 \alias{norm_em}
 \title{Gaussian model wrapper function}
 \usage{
-norm_em(
-  ecs,
-  pop_N,
-  strt_vals,
-  errorfxn,
-  penaltyfunc,
-  priorval,
-  cores,
-  tau,
-  timestep
-)
+norm_em(ecs, pop_N, strt_vals, errorfxn, penaltyfunc, priorval)
 }
 \arguments{
 \item{ecs}{A list object providing the observed or masked epidemic curves. Each element of the list object is a numeric vector.}
@@ -28,12 +18,6 @@ norm_em(
 \item{penaltyfunc}{A function object providing the penalty calculation used to penalize the optimization based \code{priorval}. The default is \code{NULL}.}
 
 \item{priorval}{A numeric vector providing the prior values produced by the statistical model, which the optimization will be penalized towards. The default is \code{NULL}.}
-
-\item{cores}{A numeric object providing the number of cores to be assigned to the model process when run in parallel.}
-
-\item{tau}{A numeric object providing the number of time steps that the mechanistic model should be simulating.}
-
-\item{timestep}{A numeric object providing the timestep frequency, in number of days, i.e. one week would be \code{7} while one day would be \code{1}.}
 }
 \value{
 A list object containing the new parameter values produced by the optimization (for each location), and the convergence results of the optimization.
@@ -44,6 +28,6 @@ Gaussian model wrapper function
 \examples{
 
 norm_em(ecs = my_curves, pop_N = population, errorfxn = norm_error,
-penaltyfunc = NULL, priorval = NULL, cores = 1, tau = 52, timestep = 7)
+penaltyfunc = NULL, priorval = NULL)
 
 }

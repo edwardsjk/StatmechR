@@ -627,9 +627,6 @@ stat.mdl.sl.pred <- function(mdl, x) {
 #' @param errorfxn A function object providing the error calculation for the optimization.
 #' @param penaltyfunc A function object providing the penalty calculation used to penalize the optimization based `priorval`. The default is `NULL`.
 #' @param priorval A numeric vector providing the prior values produced by the statistical model, which the optimization will be penalized towards. The default is `NULL`.
-#' @param cores A numeric object providing the number of cores to be assigned to the model process when run in parallel.
-#' @param tau A numeric object providing the number of time steps that the mechanistic model should be simulating.
-#' @param timestep A numeric object providing the timestep frequency, in number of days, i.e. one week would be `7` while one day would be `1`.
 #'
 #' @return A list object containing the new parameter values produced by the optimization (for each location), and the convergence results of the optimization.
 #'
@@ -638,14 +635,12 @@ stat.mdl.sl.pred <- function(mdl, x) {
 #' @examples
 #'
 #' norm_em(ecs = my_curves, pop_N = population, errorfxn = norm_error,
-#' penaltyfunc = NULL, priorval = NULL, cores = 1, tau = 52, timestep = 7)
+#' penaltyfunc = NULL, priorval = NULL)
 #'
-norm_em <- function(ecs, pop_N, strt_vals, errorfxn, penaltyfunc, priorval,
-                    cores, tau, timestep) {
+norm_em <- function(ecs, pop_N, strt_vals, errorfxn, penaltyfunc, priorval) {
 
   model_fit <- fit_norm_model(ecs, normmdl, strt_vals, errorfxn,
-                              priorfunc = penaltyfunc, prior = priorval,
-                              cores, tau)
+                              priorfunc = penaltyfunc, prior = priorval)
 
   return(model_fit)
 }
@@ -668,8 +663,8 @@ norm_em <- function(ecs, pop_N, strt_vals, errorfxn, penaltyfunc, priorval,
 #' @param max.iter A numeric object providing the maximum number of iterations that should be completed. If the threshold has not been met by this number of iterations, the iterative process will stop. The default is `100`
 #' @param cores A numeric object providing the number of cores that should be assigned to run the function in parallel.
 #' @param stat.family A character object providing the error distribution family for the statistical model. The options are `"gaussian"` and `"poisson"`.
-#' @param tau A character object providing the number of timesteps that should be simulated for the mechanistic model prediction.
-#' @param timestep A numeric object providng the number of days in each time step. For example, a weekly time step would be `timwestep = 7`
+#' @param tau A character object providing the number of timesteps that should be simulated for the mechanistic model prediction. If using the gaussian model, allow tau to be the default `NULL`.
+#' @param timestep A numeric object providng the number of days in each time step. For example, a weekly time step would be `timwestep = 7`.If using the gaussian model, allow timestep to be the default `NULL`.
 #'
 #' @return A list object containing the following objects:
 #' - `K` Most recent prediction of epidemic size from combined model
@@ -687,16 +682,17 @@ norm_em <- function(ecs, pop_N, strt_vals, errorfxn, penaltyfunc, priorval,
 #'
 #' @examples
 #'
-#' em_func_model(epi_curves = my_curves, covdat = env_data, init_K = kmech,
+#' em_func_model(epi_curves = my_curves, pop_N = population,
+#'               covdat = env_data, init_K = kmech, epimdlfit = my_model,
 #'               starting_vals = values, error_func = norm_error,
 #'               statmdlfit = my_stat_fit, statmdlpred = my_stat_pred,
 #'               threshold = 5, max.iter = 1000, cores = 20,
-#'               stat.family = "gaussian", tau = 52, timestep = 7)
+#'               stat.family = "gaussian", tau = NULL, timestep = NULL)
 #'
 em_func_model <- function(epi_curves, covdat, pop_N, initK, epimdlfit,
                           starting_vals, error_func, penalty_func, statmdlfit,
-                          statmdlpred, threshold = 20, max.iter = 100, cores,
-                          stat.family = "gaussian", tau = 52, timestep = NULL) {
+                          statmdlpred, threshold = 20, max.iter = 100, cores = NULL,
+                          stat.family = "gaussian", tau = NULL, timestep = NULL) {
 
   iter <- 0                   # initialize iter
   iter_diff <- 2 * threshold  # set iter_diff > threshold for first iter
@@ -731,18 +727,40 @@ em_func_model <- function(epi_curves, covdat, pop_N, initK, epimdlfit,
 
     if(iter == 1){
 
-      fitepimdl <- epimdlfit(epi_curves, pop_N,
-                             strt_vals = prev_epi_mdl,
-                             error_func, penaltyfunc = NULL,
-                             priorval = NULL, cores,
-                             tau, timestep)
+      if(is.null(tau)){
+
+        fitepimdl <- epimdlfit(epi_curves, pop_N,
+                               strt_vals = prev_epi_mdl,
+                               error_func, penaltyfunc = NULL,
+                               priorval = NULL)
+
+      }else{
+
+        fitepimdl <- epimdlfit(epi_curves, pop_N,
+                               strt_vals = prev_epi_mdl,
+                               error_func, penaltyfunc = NULL,
+                               priorval = NULL,
+                               tau, timestep)
+      }
+
     }else{
 
-      fitepimdl <- epimdlfit(epi_curves, pop_N,
-                             strt_vals = prev_epi_mdl,
-                             error_func, penalty_func,
-                             priorval = lastK, cores,
-                             tau, timestep)
+      if(is.null(tau)){
+
+        fitepimdl <- epimdlfit(epi_curves, pop_N,
+                               strt_vals = prev_epi_mdl,
+                               error_func, penalty_func,
+                               priorval = lastK)
+
+      }else{
+
+        fitepimdl <- epimdlfit(epi_curves, pop_N,
+                               strt_vals = prev_epi_mdl,
+                               error_func, penalty_func,
+                               priorval = lastK,
+                               tau, timestep)
+
+      }
 
     }
 
@@ -784,7 +802,6 @@ em_func_model <- function(epi_curves, covdat, pop_N, initK, epimdlfit,
               diff = iter_diff))
 
 }
-
 ##
 
 #' Optimization of a gaussian epidemic model
