@@ -1,7 +1,21 @@
-library("devtools")
+#### PACKAGE DEVELOPMENT: STATMECHR ####
+
+library(devtools)
 library(roxygen2)
+library(testthat)
+library(knitr)
+
+#create_package("/users/a/b/abagaels/StatMechR")
+
+devtools::dev_sitrep()
+devtools::update_packages("devtools")
+devtools::install_dev_deps()
+
 setwd("/users/a/b/abagaels/StatMechR")
-#document()
+document()
+
+usethis::use_build_ignore(c("build", "data-raw"), escape = T)
+
 
 ## Add dependencies
 
