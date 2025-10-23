@@ -10,7 +10,8 @@ fit_norm_model(
   epi_mdl_pars,
   error_func,
   priorfunc = NULL,
-  prior = NULL
+  prior = NULL,
+  cores = NULL
 )
 }
 \arguments{
@@ -25,6 +26,8 @@ fit_norm_model(
 \item{priorfunc}{A function object providing the penalty calculation used to penalize the mechanistic model optimization towards the results from the statistical model.}
 
 \item{prior}{A numeric vector providing the results from the statistical model that the \code{priorfunc} will penalize towards.}
+
+\item{cores}{A numeric object providing the number of cores that should be assigned to run the function in parallel. If not running in parallel this can be left as the default \code{NULL}.}
 }
 \value{
 A list object consisting of, for each location:

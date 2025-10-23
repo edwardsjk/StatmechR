@@ -13,7 +13,8 @@ fit_epi_model(
   priorfunc = NULL,
   prior = NULL,
   tau,
-  timestep
+  timestep,
+  cores = NULL
 )
 }
 \arguments{
@@ -33,7 +34,9 @@ fit_epi_model(
 
 \item{tau}{A character object providing the number of timesteps that should be simulated for the mechanistic model prediction.}
 
-\item{timestep}{A numeric object providng the number of days in each time step. For example, a weekly time step would be \code{timestep = 7}}
+\item{timestep}{A numeric object providng the number of days in each time step. For example, a weekly time step would be \code{timestep = 7}.}
+
+\item{cores}{A numeric object providing the number of cores that should be assigned to run the function in parallel. If not running in parallel this can be left as the default \code{NULL}.}
 }
 \value{
 A list object consisting of, for each location:

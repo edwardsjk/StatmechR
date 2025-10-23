@@ -8,19 +8,20 @@ em_func_model(
   epi_curves,
   covdat,
   pop_N,
-  initK,
-  epimdlfit,
+  stat.model = "SL",
+  epi.model = "gaussian",
+  custom_model = NULL,
   starting_vals,
   error_func,
-  penalty_func,
-  statmdlfit,
-  statmdlpred,
-  threshold = 20,
-  max.iter = 100,
-  cores = NULL,
-  stat.family = "gaussian",
+  penaltyfunc,
   tau = NULL,
-  timestep = NULL
+  timestep = NULL,
+  stat.family = "gaussian",
+  threshold = 5,
+  max.iter = 100,
+  epi.parallel = F,
+  stat.parallel = F,
+  cores = NULL
 )
 }
 \arguments{
@@ -30,32 +31,33 @@ em_func_model(
 
 \item{pop_N}{A numeric vector providing the population size for each location.}
 
-\item{initK}{\subsection{removing argument}{
-}}
+\item{stat.model}{A character string indicating the statistical methodology that should be used. The options are a SuperLearner \code{"SL"} (the default) or a linear regression \code{"lin"}.}
 
-\item{epimdlfit}{A function object providing the wrapper used to run the chosen mechanistic model.}
+\item{epi.model}{A character string indicating the epidemic model that should be used.The options are a Gaussian model \code{"gaussian"} or a custom model \code{"custom"}.}
+
+\item{custom_model}{A function object providing the custom epidemic model if applicable. If using the Gaussian model, this argument can be left as the default \code{NULL}.}
 
 \item{starting_vals}{A data frame providing the starting parameter values for the mechanistic model.}
 
 \item{error_func}{A function object providing the error calculation for the optimization of the mechanistic model.}
 
-\item{penalty_func}{A function object providing the penalty calculation used to penalize the mechanistic model optimization towards the results from the statistical model.}
+\item{tau}{A character object providing the number of timesteps that should be simulated for the mechanistic model prediction. If using the gaussian model, allow tau to be the default \code{NULL}.}
 
-\item{statmdlfit}{A function object providing the function used to fit the statistical model component.}
+\item{timestep}{A numeric object providing the number of days in each time step. For example, a weekly time step would be \code{timestep = 7}.If using the gaussian model, allow timestep to be the default \code{NULL}.}
 
-\item{statmdlpred}{A function object providing the function used to predict the outcome using the trained statistical model.}
+\item{stat.family}{A character object providing the error distribution family for the statistical model. The options are \code{"gaussian"} and \code{"poisson"}.}
 
 \item{threshold}{A numeric object providing a threshold for the iteration difference. The iteration difference is difference between the current iteration prediction and previous iteration prediction. Once this drops below the threshold among all locations, the iterative process will stop. The default is \code{20}}
 
 \item{max.iter}{A numeric object providing the maximum number of iterations that should be completed. If the threshold has not been met by this number of iterations, the iterative process will stop. The default is \code{100}}
 
-\item{cores}{A numeric object providing the number of cores that should be assigned to run the function in parallel.}
+\item{epi.parallel}{A logical object indicating if the epidemic model should be run in parallel. The default is \code{FALSE}.}
 
-\item{stat.family}{A character object providing the error distribution family for the statistical model. The options are \code{"gaussian"} and \code{"poisson"}.}
+\item{stat.parallel}{A logical object indicating if the statistical model should be run in parallel. The default is \code{FALSE}}
 
-\item{tau}{A character object providing the number of timesteps that should be simulated for the mechanistic model prediction. If using the gaussian model, allow tau to be the default \code{NULL}.}
+\item{cores}{A numeric object providing the number of cores that should be assigned to run the function in parallel. If not running in parallel this can be left as the default \code{NULL}.}
 
-\item{timestep}{A numeric object providng the number of days in each time step. For example, a weekly time step would be \code{timwestep = 7}.If using the gaussian model, allow timestep to be the default \code{NULL}.}
+\item{penalty_func}{A function object providing the penalty calculation used to penalize the mechanistic model optimization towards the results from the statistical model.}
 }
 \value{
 A list object containing the following objects:
@@ -65,7 +67,7 @@ A list object containing the following objects:
 \item \code{Khist} Epidemic size predictions from the combined model at each iteration
 \item \code{Khist.mech} Epidemic size predictions from mechanistic component at each iteration
 \item \code{epi.params} Most recently optimized model parameters
-\item \code{params} Optimized model parameters for each iteration
+\item \code{params} Optimized model parameters for the last epidemic iteration
 \item \code{converged} Convergence results from the most recent iteration
 \item \code{diff} Iteration difference between the last iteration and the one previous
 }
@@ -75,11 +77,14 @@ Combined mechanistic and statistic iterative model
 }
 \examples{
 
-em_func_model(epi_curves = my_curves, pop_N = population,
-              covdat = env_data, init_K = kmech, epimdlfit = my_model,
-              starting_vals = values, error_func = norm_error,
-              statmdlfit = my_stat_fit, statmdlpred = my_stat_pred,
-              threshold = 5, max.iter = 1000, cores = 20,
-              stat.family = "gaussian", tau = NULL, timestep = NULL)
+em_func_model(epi_curves = my_curves, covdat = my_covariates,
+              stat.model = "SL", epi_model = "gaussian",
+              custom_model = NULL, starting_vals = my_params,
+              error_func = poisson_error2, penaltyfunc = poispen,
+              tau = NULL, timestep = NULL, stat.family = "gaussian",
+              threshold = 5, max.iter = 100, epi.parallel = TRUE,
+              stat.parallel = FALSE, cores = 4)
+
+
 
 }
