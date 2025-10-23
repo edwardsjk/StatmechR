@@ -513,7 +513,8 @@ stat.mdl.sl.fit.para2 <- function(x, y, cores = 1, family = "gaussian") {
 
   if(family == "gaussian"){
 
-    rc <- snowSuperLearner(X = x, Y = y, newX = x, family = "gaussian", cluster = cluster,
+    rc <- snowSuperLearner(X = x, Y = y, newX = x, family = "gaussian",
+                           cluster = cluster, cvControl = list(V = 10),
                            SL.library = list(c("SL.rpart", "screen.glmnet"),
                                              c("SL.randomForest", "screen.glmnet"),
                                              c("SL.glm", "screen.glmnet"),
@@ -531,7 +532,7 @@ stat.mdl.sl.fit.para2 <- function(x, y, cores = 1, family = "gaussian") {
   if(family == "poisson"){
 
     rc <- snowSuperLearner(X = x, Y = y, newX = x, family = "poisson",
-                           cluster = cluster,
+                           cluster = cluster, cvControl = list(V = 10),
                            SL.library = list(c("SL.glm", "screen.glmnet"),
                                              c('SL.gam', "screen.glmnet"),
                                              c("SL.glmnet", "screen.glmnet"),
@@ -568,6 +569,7 @@ stat.mdl.sl.fit <- function(x, y, family = "gaussian") {
   if(family == "gaussian"){
 
     rc <- SuperLearner(X = x, Y = y, family = "gaussian",
+                       cvControl = list(V = 10),
                        SL.library = list(c("SL.rpart", "screen.glmnet"),
                                          c("SL.randomForest", "screen.glmnet"),
                                          c("SL.glm", "screen.glmnet"),
@@ -582,6 +584,7 @@ stat.mdl.sl.fit <- function(x, y, family = "gaussian") {
   if(family == "poisson"){
 
     rc <- SuperLearner(X = x, Y = y, family = "poisson",
+                       cvControl = list(V = 10),
                        SL.library = list(c("SL.glm", "screen.glmnet"),
                                          c('SL.gam', "screen.glmnet"),
                                          c("SL.glmnet", "screen.glmnet"),
@@ -652,19 +655,21 @@ norm_em <- function(ecs, pop_N, strt_vals, errorfxn, penaltyfunc, priorval) {
 #' @param epi_curves A list object providing the observed or masked epidemic curves. Each element of the list object is a numeric vector.
 #' @param covdat A data frame object providing the covariate values for each location.
 #' @param pop_N A numeric vector providing the population size for each location.
-#' @param initK ## removing argument ##
-#' @param epimdlfit A function object providing the wrapper used to run the chosen mechanistic model.
+#' @param stat.model A character string indicating the statistical methodology that should be used. The options are a SuperLearner `"SL"` (the default) or a linear regression `"lin"`.
+#' @param epi.model A character string indicating the epidemic model that should be used.The options are a Gaussian model `"gaussian"` or a custom model `"custom"`.
+#' @param custom_model A function object providing the custom epidemic model if applicable. If using the Gaussian model, this argument can be left as the default `NULL`.
 #' @param starting_vals A data frame providing the starting parameter values for the mechanistic model.
 #' @param error_func A function object providing the error calculation for the optimization of the mechanistic model.
 #' @param penalty_func A function object providing the penalty calculation used to penalize the mechanistic model optimization towards the results from the statistical model.
-#' @param statmdlfit A function object providing the function used to fit the statistical model component.
-#' @param statmdlpred A function object providing the function used to predict the outcome using the trained statistical model.
+#' @param tau A character object providing the number of timesteps that should be simulated for the mechanistic model prediction. If using the gaussian model, allow tau to be the default `NULL`.
+#' @param timestep A numeric object providing the number of days in each time step. For example, a weekly time step would be `timestep = 7`.If using the gaussian model, allow timestep to be the default `NULL`.
+#' @param stat.family A character object providing the error distribution family for the statistical model. The options are `"gaussian"` and `"poisson"`.
 #' @param threshold A numeric object providing a threshold for the iteration difference. The iteration difference is difference between the current iteration prediction and previous iteration prediction. Once this drops below the threshold among all locations, the iterative process will stop. The default is `20`
 #' @param max.iter A numeric object providing the maximum number of iterations that should be completed. If the threshold has not been met by this number of iterations, the iterative process will stop. The default is `100`
-#' @param cores A numeric object providing the number of cores that should be assigned to run the function in parallel.
-#' @param stat.family A character object providing the error distribution family for the statistical model. The options are `"gaussian"` and `"poisson"`.
-#' @param tau A character object providing the number of timesteps that should be simulated for the mechanistic model prediction. If using the gaussian model, allow tau to be the default `NULL`.
-#' @param timestep A numeric object providng the number of days in each time step. For example, a weekly time step would be `timwestep = 7`.If using the gaussian model, allow timestep to be the default `NULL`.
+#' @param epi.parallel A logical object indicating if the epidemic model should be run in parallel. The default is `FALSE`.
+#' @param stat.parallel A logical object indicating if the statistical model should be run in parallel. The default is `FALSE`
+#' @param cores A numeric object providing the number of cores that should be assigned to run the function in parallel. If not running in parallel this can be left as the default `NULL`.
+#'
 #'
 #' @return A list object containing the following objects:
 #' - `K` Most recent prediction of epidemic size from combined model
@@ -672,7 +677,7 @@ norm_em <- function(ecs, pop_N, strt_vals, errorfxn, penaltyfunc, priorval) {
 #' - `Khist` Epidemic size predictions from the combined model at each iteration
 #' - `Khist.mech` Epidemic size predictions from mechanistic component at each iteration
 #' - `epi.params` Most recently optimized model parameters
-#' - `params` Optimized model parameters for each iteration
+#' - `params` Optimized model parameters for the last epidemic iteration
 #' - `converged` Convergence results from the most recent iteration
 #' - `diff` Iteration difference between the last iteration and the one previous
 #'
@@ -682,17 +687,23 @@ norm_em <- function(ecs, pop_N, strt_vals, errorfxn, penaltyfunc, priorval) {
 #'
 #' @examples
 #'
-#' em_func_model(epi_curves = my_curves, pop_N = population,
-#'               covdat = env_data, init_K = kmech, epimdlfit = my_model,
-#'               starting_vals = values, error_func = norm_error,
-#'               statmdlfit = my_stat_fit, statmdlpred = my_stat_pred,
-#'               threshold = 5, max.iter = 1000, cores = 20,
-#'               stat.family = "gaussian", tau = NULL, timestep = NULL)
+#' em_func_model(epi_curves = my_curves, covdat = my_covariates,
+#'               stat.model = "SL", epi_model = "gaussian",
+#'               custom_model = NULL, starting_vals = my_params,
+#'               error_func = poisson_error2, penaltyfunc = poispen,
+#'               tau = NULL, timestep = NULL, stat.family = "gaussian",
+#'               threshold = 5, max.iter = 100, epi.parallel = TRUE,
+#'               stat.parallel = FALSE, cores = 4)
 #'
-em_func_model <- function(epi_curves, covdat, pop_N, initK, epimdlfit,
-                          starting_vals, error_func, penalty_func, statmdlfit,
-                          statmdlpred, threshold = 20, max.iter = 100, cores = NULL,
-                          stat.family = "gaussian", tau = NULL, timestep = NULL) {
+#'
+#'
+em_func_model <- function(epi_curves, covdat, pop_N,
+                          stat.model = "SL", epi.model = "gaussian",
+                          custom_model = NULL, starting_vals, error_func,
+                          penaltyfunc, tau = NULL, timestep = NULL,
+                          stat.family = "gaussian", threshold = 5,
+                          max.iter = 100, epi.parallel = F,
+                          stat.parallel = F, cores = NULL){
 
   iter <- 0                   # initialize iter
   iter_diff <- 2 * threshold  # set iter_diff > threshold for first iter
@@ -711,7 +722,7 @@ em_func_model <- function(epi_curves, covdat, pop_N, initK, epimdlfit,
     iter <- iter + 1                # update iter
     if(iter == 1){
 
-      lastK <- initK
+      lastK <- prev_epi_mdl[,1]
 
     }else{  # set lastK to starting values for first iter
 
@@ -727,48 +738,131 @@ em_func_model <- function(epi_curves, covdat, pop_N, initK, epimdlfit,
 
     if(iter == 1){
 
-      if(is.null(tau)){
+      if(epi.model == "gaussian"){
 
-        fitepimdl <- epimdlfit(epi_curves, pop_N,
-                               strt_vals = prev_epi_mdl,
-                               error_func, penaltyfunc = NULL,
-                               priorval = NULL)
+        if(epi.parallel == FALSE){
 
-      }else{
+          fitepimdl <- fit_norm_model(ecs = epi_curves,
+                                      epi_mdl_func = normmdl,
+                                      epi_mdl_pars = starting_vals,
+                                      error_func = error_func,
+                                      priorfunc = NULL,
+                                      prior = NULL)
 
-        fitepimdl <- epimdlfit(epi_curves, pop_N,
-                               strt_vals = prev_epi_mdl,
-                               error_func, penaltyfunc = NULL,
-                               priorval = NULL,
-                               tau, timestep)
+        }else{
+
+          fitepimdl <- fit_norm_model(ecs = epi_curves,
+                                      epi_mdl_func = normmdl,
+                                      epi_mdl_pars = starting_vals,
+                                      error_func = error_func,
+                                      priorfunc = NULL,
+                                      prior = NULL,
+                                      cores = cores)
+
+        }
+
+      }
+
+      if(epi.model == "custom"){
+
+        prev_epi_mdl[, 2:ncol(prev_epi_mdl)] <- log(prev_epi_mdl[, -1])
+
+        if(epi.parallel == FALSE){
+
+          fitepimdl <- fit_epi_model(ecs = epi_curves,
+                                     N = pop_N,
+                                     epi_mdl_func = custom_model,
+                                     epi_mdl_pars = starting_vals,
+                                     error_func = error_func,
+                                     priorfunc = NULL,
+                                     prior = NULL,
+                                     tau = tau,
+                                     timestep = timestep)
+
+        }else{
+
+          fitepimdl <- fit_epi_model(ecs = epi_curves,
+                                     N = pop_N,
+                                     epi_mdl_func = custom_model,
+                                     epi_mdl_pars = starting_vals,
+                                     error_func = error_func,
+                                     priorfunc = NULL,
+                                     prior = NULL,
+                                     cores = cores,
+                                     tau = tau,
+                                     timestep = timestep)
+
+        }
+
       }
 
     }else{
 
-      if(is.null(tau)){
+      if(epi.model == "gaussian"){
 
-        fitepimdl <- epimdlfit(epi_curves, pop_N,
-                               strt_vals = prev_epi_mdl,
-                               error_func, penalty_func,
-                               priorval = lastK)
+        if(epi.parallel == FALSE){
 
-      }else{
+          fitepimdl <- fit_norm_model(ecs = epi_curves,
+                                      epi_mdl_func = normmdl,
+                                      epi_mdl_pars = starting_vals,
+                                      error_func = error_func,
+                                      priorfunc = penaltyfunc,
+                                      prior = lastK)
 
-        fitepimdl <- epimdlfit(epi_curves, pop_N,
-                               strt_vals = prev_epi_mdl,
-                               error_func, penalty_func,
-                               priorval = lastK,
-                               tau, timestep)
+        }else{
+
+          fitepimdl <- fit_norm_model(ecs = epi_curves,
+                                      epi_mdl_func = normmdl,
+                                      epi_mdl_pars = starting_vals,
+                                      error_func = error_func,
+                                      priorfunc = penaltyfunc,
+                                      prior = lastK,
+                                      cores = cores)
+
+        }
+
+      }
+
+      if(epi.model == "custom"){
+
+        prev_epi_mdl[, 2:ncol(prev_epi_mdl)] <- log(prev_epi_mdl[, -1])
+
+        if(epi.parallel == FALSE){
+
+          fitepimdl <- fit_epi_model(ecs = epi_curves,
+                                     N = pop_N,
+                                     epi_mdl_func = custom_model,
+                                     epi_mdl_pars = starting_vals,
+                                     error_func = error_func,
+                                     priorfunc = penaltyfunc,
+                                     prior = lastK,
+                                     tau = tau,
+                                     timestep = timestep)
+
+        }else{
+
+          fitepimdl <- fit_epi_model(ecs = epi_curves,
+                                     N = pop_N,
+                                     epi_mdl_func = custom_model,
+                                     epi_mdl_pars = starting_vals,
+                                     error_func = error_func,
+                                     priorfunc = penaltyfunc,
+                                     prior = lastK,
+                                     cores = cores,
+                                     tau = tau,
+                                     timestep = timestep)
+
+        }
 
       }
 
     }
 
-    params <- prev_epi_mdl
-
     tmp <- lapply(fitepimdl, function(x){x[[1]]})
 
     prev_epi_mdl <- as.data.frame(do.call(rbind, tmp))
+
+    prev_epi_mdl[, 2:ncol(prev_epi_mdl)] <- exp(abs(prev_epi_mdl[, -1]))
 
     Kmech[iter, ] <- prev_epi_mdl[, 1]
 
@@ -776,8 +870,34 @@ em_func_model <- function(epi_curves, covdat, pop_N, initK, epimdlfit,
 
     Kmech2 <- Kmech[iter,]/(pop_N/1000)
 
-    fitstatmdl <- statmdlfit(covdat, Kmech2, cores, stat.family)
-    K[iter, ] <- statmdlpred(fitstatmdl, covdat) * (pop_N/1000)
+    if(stat.model == "SL"){
+
+      if(stat.parallel == FALSE){
+
+        fitstatmdl <- stat.mdl.sl.fit(x = covdat, y = Kmech2,
+                                      family = stat.family)
+
+        K[iter, ] <- stat.mdl.sl.pred(fitstatmdl, covdat) * (pop_N/1000)
+
+
+      }else{
+
+        fitstatmdl <- stat.mdl.sl.fit.para(x = covdat, y = Kmech2,
+                                           cores = cores, family = stat.family)
+
+        K[iter, ] <- stat.mdl.sl.pred(fitstatmdl, covdat) * (pop_N/1000)
+
+      }
+
+    }
+
+    if(stat.model == "linear"){
+
+      fitstatmdl <- stat.mdl.lin.fit(x = covdat, y = Kmech2)
+
+      K[iter, ] <- stat.mdl.lin.pred(fitstatmdl, covdat) * (pop_N/1000)
+
+    }
 
     ## Check iter_diff
     if (iter > 1) {
@@ -797,11 +917,12 @@ em_func_model <- function(epi_curves, covdat, pop_N, initK, epimdlfit,
               Khist = K[1:iter, ],
               Khist.mech = Kmech[1:iter, ],
               epi.parms = fitepimdl,
-              param.all = params,
+              param.all = prev_epi_mdl,
               converged = converged,
               diff = iter_diff))
 
 }
+
 ##
 
 #' Optimization of a gaussian epidemic model
@@ -812,6 +933,7 @@ em_func_model <- function(epi_curves, covdat, pop_N, initK, epimdlfit,
 #' @param error_func A function object providing the error calculation for the optimization of the mechanistic model.
 #' @param priorfunc A function object providing the penalty calculation used to penalize the mechanistic model optimization towards the results from the statistical model.
 #' @param prior A numeric vector providing the results from the statistical model that the `priorfunc` will penalize towards.
+#' @param cores A numeric object providing the number of cores that should be assigned to run the function in parallel. If not running in parallel this can be left as the default `NULL`.
 #'
 #' @returns A list object consisting of, for each location:
 #'            - a dataframe with the updated parameter values
@@ -827,17 +949,12 @@ em_func_model <- function(epi_curves, covdat, pop_N, initK, epimdlfit,
 #'                prior_func = NULL, prior = NULL)
 #'
 fit_norm_model <- function(ecs, epi_mdl_func, epi_mdl_pars,
-                           error_func, priorfunc = NULL, prior = NULL) {
+                           error_func, priorfunc = NULL, prior = NULL,
+                           cores = NULL) {
 
   obj_fxn <- function(pars, ec, priorfunc = NULL, prior = NULL) {
 
-    pred_curve <- epi_mdl_func(pars, length(ec))
-
-    if(pars[1] == 0){
-
-      pars[1] <- 1
-
-    }
+    pred_curve <- round(epi_mdl_func(pars, length(ec)))
 
     if(!is.null(priorfunc)) {
 
@@ -855,19 +972,50 @@ fit_norm_model <- function(ecs, epi_mdl_func, epi_mdl_pars,
 
   }
 
-  mod_res <- list()
 
-  for(i in seq_along(ecs)){
+  if(!is.null(cores)){
 
-    ec <- ecs[[i]]
+    cluster <- makeCluster(cores)
+    registerDoParallel(cluster)
 
-    mdl_pars <- unname(unlist(epi_mdl_pars[i,]))
+    mod_res <- foreach(i = seq_along(ecs), .packages = "dplyr")%dopar%{
 
-    if(length(ec) == 1 & ec[1] == 0){
+      ec <- ecs[[i]]
 
-      mod_res[[i]] <- list(mdl_pars, NA)
+      mdl_pars <- unname(unlist(epi_mdl_pars[i,]))
 
-    }else{
+      if (!is.null(priorfunc)) {
+
+        tmp <- optim(mdl_pars, obj_fxn, ec = ec, priorfunc = priorfunc,
+                     prior = prior[i])
+
+      }else{
+
+        tmp <- optim(mdl_pars, obj_fxn, ec = ec)
+
+      }
+
+      converged <- tmp$convergence
+
+      new_pars <- tmp$par
+
+      return(list(new_pars, converged))
+
+      gc()
+
+    }
+
+    stopCluster(cl = cluster)
+
+  }else{
+
+    mod_res <- list()
+
+    for(i in seq_along(ecs)){
+
+      ec <- ecs[[i]]
+
+      mdl_pars <- unname(unlist(epi_mdl_pars[i,]))
 
       if (!is.null(priorfunc)) {
 
@@ -907,7 +1055,8 @@ fit_norm_model <- function(ecs, epi_mdl_func, epi_mdl_pars,
 #' @param priorfunc A function object providing the penalty calculation used to penalize the mechanistic model optimization towards the results from the statistical model.
 #' @param prior A numeric vector providing the results from the statistical model that the `priorfunc` will penalize towards.
 #' @param tau A character object providing the number of timesteps that should be simulated for the mechanistic model prediction.
-#' @param timestep A numeric object providng the number of days in each time step. For example, a weekly time step would be `timestep = 7`
+#' @param timestep A numeric object providng the number of days in each time step. For example, a weekly time step would be `timestep = 7`.
+#' @param cores A numeric object providing the number of cores that should be assigned to run the function in parallel. If not running in parallel this can be left as the default `NULL`.
 #'
 #' @returns A list object consisting of, for each location:
 #'            - a dataframe with the updated parameter values
@@ -925,17 +1074,11 @@ fit_norm_model <- function(ecs, epi_mdl_func, epi_mdl_pars,
 #'
 fit_epi_model <- function(ecs, N, epi_mdl_func, epi_mdl_pars,
                           error_func, priorfunc = NULL, prior = NULL,
-                          tau, timestep) {
+                          tau, timestep, cores = NULL) {
 
   obj_fxn <- function(pars, ec, N, priorfunc = NULL, prior = NULL, timestep) {
 
-    pred_curve <- epi_mdl_func(N, pars[2:length(pars)], timestep, (length(ec) + 1))
-
-    if(pars[1] == 0){
-
-      pars[1] <- 1
-
-    }
+    pred_curve <- epi_mdl_func(N, pars[2:length(pars)], timestep, (length(ec) - 1))
 
     if(!is.null(priorfunc)) {
 
@@ -952,38 +1095,81 @@ fit_epi_model <- function(ecs, N, epi_mdl_func, epi_mdl_pars,
 
   }
 
-  mod_res <- list()
+  if(!is.null(cores)){
 
-  for(i in seq_along(ecs)){
+    cluster <- makeCluster(cores)
+    registerDoParallel(cluster)
 
-    ec <- ecs[[i]]
-    N2 <- N[i]
-    mdl_pars <- unname(unlist(epi_mdl_pars[i,]))
+    mod_res <- foreach(i = seq_along(ecs), .packages = "dplyr")%dopar%{
 
-    if (!is.null(priorfunc)) {
+      ec <- ecs[[i]]
+      N2 <- N[i]
+      mdl_pars <- unname(unlist(epi_mdl_pars[i,]))
 
-      tmp <- optim(mdl_pars, obj_fxn, ec = ec, N = N2, priorfunc = priorfunc,
-                   prior = prior[i], timestep = timestep)
+      if (!is.null(priorfunc)) {
 
-    }else{
+        tmp <- optim(mdl_pars, obj_fxn, ec = ec, N = N2, priorfunc = priorfunc,
+                     prior = prior[i], timestep = timestep)
 
-      tmp <- optim(mdl_pars, obj_fxn, ec = ec, N = N2, timestep = timestep)
+      }else{
+
+        tmp <- optim(mdl_pars, obj_fxn, ec = ec, N = N2, timestep = timestep)
+
+      }
+
+      converged <- tmp$convergence
+
+      curves <- epi_mdl_func(N2, tmp$par[2:length(tmp$par)], timestep, tau + length(ec))
+
+      Kmech <- sum(as.data.frame(curves)$incident)
+
+      new_pars <- c(Kmech, tmp$par[2:length(tmp$par)])
+
+      return(list(new_pars, converged))
+
+      gc()
 
     }
 
-    converged <- tmp$convergence
+    stopCluster(cl = cluster)
 
-    curves <- epi_mdl_func(N2, tmp$par[2:length(tmp$par)], timestep, tau + length(ec))
+  }else{
 
-    Kmech <- sum(as.data.frame(curves)$incident)
+    mod_res <- list()
 
-    new_pars <- c(Kmech, tmp$par[2:length(tmp$par)])
+    for(i in seq_along(ecs)){
 
-    mod_res[[i]] <- list(new_pars, converged)
+      ec <- ecs[[i]]
+      N2 <- N[i]
+      mdl_pars <- unname(unlist(epi_mdl_pars[i,]))
+
+      if (!is.null(priorfunc)) {
+
+        tmp <- optim(mdl_pars, obj_fxn, ec = ec, N = N2, priorfunc = priorfunc,
+                     prior = prior[i], timestep = timestep)
+
+      }else{
+
+        tmp <- optim(mdl_pars, obj_fxn, ec = ec, N = N2, timestep = timestep)
+
+      }
+
+      converged <- tmp$convergence
+
+      curves <- epi_mdl_func(N2, tmp$par[2:length(tmp$par)], timestep, tau + length(ec))
+
+      Kmech <- sum(as.data.frame(curves)$incident)
+
+      new_pars <- c(Kmech, tmp$par[2:length(tmp$par)])
+
+      mod_res[[i]] <- list(new_pars, converged)
+
+    }
 
   }
 
   return(mod_res)
+
 }
 
 
@@ -1005,6 +1191,18 @@ fit_epi_model <- function(ecs, N, epi_mdl_func, epi_mdl_pars,
 #' poisson_error(ec = observed_cases, pred = model_cases, estK = params[1])
 #'
 poisson_error <- function(ec, pred, estK) {
+
+  estK <- round(estK)
+
+  if(estK == 0){
+
+    estK <- 1
+
+  }
+
+  ec[which(ec == 0)] <- 1
+
+  pred[which(pred == 0)] <- 1
 
   logprob <- sum(dpois(ec, pred, log = TRUE)) +
     dnorm(log10(estK), 0, 1, log = TRUE)
@@ -1030,6 +1228,18 @@ poisson_error <- function(ec, pred, estK) {
 #'
 poisson_error2 <- function(ec, pred, estK) {
 
+  estK <- round(estK)
+
+  if(estK == 0){
+
+    estK <- 1
+
+  }
+
+  ec[which(ec == 0)] <- 1
+
+  pred[which(pred == 0)] <- 1
+
   logprob <- sum(dpois(ec, pred, log = TRUE)) +
     (dnorm(log10(estK), log10(sum(ec)), 1, log = TRUE)*100)
 
@@ -1053,7 +1263,15 @@ poisson_error2 <- function(ec, pred, estK) {
 #'
 poispen <- function(estK, prior) {
 
-  penalty <- dpois(round(estK), prior, log = TRUE)
+  estK <- round(estK)
+
+  if(prior == 0){
+
+    prior <- 1
+
+  }
+
+  penalty <- dpois(estK, prior, log = TRUE)
 
   return(penalty)
 
@@ -1075,6 +1293,12 @@ poispen <- function(estK, prior) {
 #' norm_error(ec = observed_cases, pred = model_cases, estK = params[1])
 #'
 norm_error <- function(ec, pred, estK){
+
+  if(estK == 0){
+
+    estK <- 1
+
+  }
 
   logprob <- sum(dnorm(ec, pred, 1, log = TRUE)) +
     dnorm(log10(estK), 0, 1, log = TRUE)
@@ -1099,6 +1323,12 @@ norm_error <- function(ec, pred, estK){
 #' norm_error2(ec = observed_cases, pred = model_cases, estK = params[1])
 #'
 norm_error2 <- function(ec, pred, estK){
+
+  if(estK == 0){
+
+    estK <- 1
+
+  }
 
   logprob <- sum(dnorm(ec, pred, 1, log = TRUE)) +
     dnorm(log10(estK), log10(ifelse(sum(ec) > 0, sum(ec), 1)), 1, log = TRUE)
