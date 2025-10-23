@@ -14,8 +14,7 @@ devtools::install_dev_deps()
 setwd("/users/a/b/abagaels/StatMechR")
 document()
 
-usethis::use_build_ignore(c("build", "data-raw"), escape = T)
-
+usethis::use_build_ignore(c("build", "data-raw", "funcs_in_progress"), escape = T)
 
 ## Add dependencies
 
