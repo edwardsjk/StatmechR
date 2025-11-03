@@ -437,8 +437,7 @@ stat.mdl.sl.fit.para <- function(x, y, cores = 1, family = "gaussian") {
                  library(gam)
                  library(rpart)
                  library(randomForest)
-                 library(e1071)          # For SL.svm
-                 library(bartMachine)    # For SL.bartMachine
+                 library(e1071)
                  options(mc.cores = 1)})
   clusterSetRNGStream(cluster, 1)
 
@@ -466,8 +465,7 @@ stat.mdl.sl.fit.para <- function(x, y, cores = 1, family = "gaussian") {
                            SL.library = list(c("SL.glm", "screen.glmnet"),
                                              c('SL.gam', "screen.glmnet"),
                                              c("SL.glmnet", "screen.glmnet"),
-                                             "SL.glmnet",
-                                             c("SL.bartMachine", "screen.glmnet")))
+                                             "SL.glmnet"))
 
     stopCluster(cluster)
     gc()
@@ -588,8 +586,7 @@ stat.mdl.sl.fit <- function(x, y, family = "gaussian") {
                        SL.library = list(c("SL.glm", "screen.glmnet"),
                                          c('SL.gam', "screen.glmnet"),
                                          c("SL.glmnet", "screen.glmnet"),
-                                         "SL.glmnet",
-                                         c("SL.bartMachine", "screen.glmnet")))
+                                         "SL.glmnet"))
 
   }
 
@@ -862,7 +859,11 @@ em_func_model <- function(epi_curves, covdat, pop_N,
 
     prev_epi_mdl <- as.data.frame(do.call(rbind, tmp))
 
-    prev_epi_mdl[, 2:ncol(prev_epi_mdl)] <- exp(abs(prev_epi_mdl[, -1]))
+    if(epi.model == "custom"){
+
+      prev_epi_mdl[, 2:ncol(prev_epi_mdl)] <- exp(abs(prev_epi_mdl[, -1]))
+
+    }
 
     Kmech[iter, ] <- prev_epi_mdl[, 1]
 
