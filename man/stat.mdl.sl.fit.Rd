@@ -2,9 +2,9 @@
 % Please edit documentation in R/functions_final.R
 \name{stat.mdl.sl.fit}
 \alias{stat.mdl.sl.fit}
-\title{Title}
+\title{Train and fit a superlearner}
 \usage{
-stat.mdl.sl.fit(x, y, family = "gaussian")
+stat.mdl.sl.fit(x, y, family = "gaussian", library.SL = NULL)
 }
 \arguments{
 \item{x}{A dataframe providing the variables for each location.}
@@ -12,12 +12,14 @@ stat.mdl.sl.fit(x, y, family = "gaussian")
 \item{y}{A numeric vector providing the outcome for each location.}
 
 \item{family}{A character object providing the error distribution. Currenly only \code{gaussian} (the default) and \code{poisson} are supported.}
+
+\item{library.SL}{A list object indicating the SL algorithms and screeners to be used in the Superlearner. Using the option \code{NULL} which will use the default set of algorithms and screeners.}
 }
 \value{
 A \code{SuperLearner} object containing the trained model
 }
 \description{
-Title
+Train and fit a superlearner
 }
 \examples{
 

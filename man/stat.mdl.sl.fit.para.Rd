@@ -4,7 +4,7 @@
 \alias{stat.mdl.sl.fit.para}
 \title{Train a SuperLearner ensemble in parallel}
 \usage{
-stat.mdl.sl.fit.para(x, y, cores = 1, family = "gaussian")
+stat.mdl.sl.fit.para(x, y, cores = 1, family = "gaussian", library.SL = NULL)
 }
 \arguments{
 \item{x}{A dataframe providing the variables for each location.}
@@ -13,7 +13,9 @@ stat.mdl.sl.fit.para(x, y, cores = 1, family = "gaussian")
 
 \item{cores}{A numeric object providing the number of cores to be used in the parallel process. The defaultt value is \code{1}.}
 
-\item{family}{A character object providing the error distribution. Currenly only \code{gaussian} (the default) and \code{poisson} are supported.}
+\item{family}{A character object providing the error distribution. Currenly only \code{gaussian} (the default) and \code{binomial} are supported.}
+
+\item{library.SL}{A list object indicating the SL algorithms and screeners to be used in the Superlearner. Using the option \code{NULL} which will use the default set of algorithms and screeners.}
 }
 \value{
 A \code{SuperLearner} object containing the trained model
