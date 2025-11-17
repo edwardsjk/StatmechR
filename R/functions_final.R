@@ -649,14 +649,12 @@ stat.mdl.sl.pred <- function(mdl, x) {
 #'
 em_func_model <- function(epi_curves, covdat, pop_N,
                           stat.model = "SL", epi.model = "gaussian",
+                          library.SL = NULL,
                           custom_model = NULL, starting_vals, error_func,
                           penaltyfunc, tau = NULL, timestep = NULL,
-                          stat.family = "gaussian", threshold = 5,
+                          stat.family = "gaussian", threshold_pct = 0.05,
                           max.iter = 100, epi.parallel = F,
                           stat.parallel = F, cores = NULL){
-
-  iter <- 0                   # initialize iter
-  iter_diff <- 2 * threshold  # set iter_diff > threshold for first iter
 
   obs <- unname(unlist(lapply(epi_curves, function(x){sum(x)})))
 
@@ -665,6 +663,11 @@ em_func_model <- function(epi_curves, covdat, pop_N,
   Kmech <- matrix(nrow = max.iter, ncol = length(epi_curves))
 
   prev_epi_mdl <- starting_vals
+
+  threshold <- median(obs * threshold_pct)
+
+  iter <- 0                   # initialize iter
+  iter_diff <- 2 * threshold  # set iter_diff > threshold for first iter
 
   ## Loop until ending criteria is met
   while (any(iter_diff >= threshold) & (iter < max.iter)) {
@@ -829,7 +832,8 @@ em_func_model <- function(epi_curves, covdat, pop_N,
       if(stat.parallel == FALSE){
 
         fitstatmdl <- stat.mdl.sl.fit(x = covdat, y = Kmech2,
-                                      family = stat.family)
+                                      family = stat.family,
+                                      library.SL = library.SL)
 
         K[iter, ] <- stat.mdl.sl.pred(fitstatmdl, covdat) * (pop_N/1000)
 
@@ -837,7 +841,8 @@ em_func_model <- function(epi_curves, covdat, pop_N,
       }else{
 
         fitstatmdl <- stat.mdl.sl.fit.para(x = covdat, y = Kmech2,
-                                           cores = cores, family = stat.family)
+                                           cores = cores, family = stat.family,
+                                           library.SL = library.SL)
 
         K[iter, ] <- stat.mdl.sl.pred(fitstatmdl, covdat) * (pop_N/1000)
 
@@ -938,24 +943,32 @@ fit_norm_model <- function(ecs, epi_mdl_func, epi_mdl_pars,
 
       mdl_pars <- unname(unlist(epi_mdl_pars[i,]))
 
-      if (!is.null(priorfunc)) {
+      if(length(ec) == 1 & ec[1] == 0){
 
-        tmp <- optim(mdl_pars, obj_fxn, ec = ec, priorfunc = priorfunc,
-                     prior = prior[i])
+        mod_res[[i]] <- list(mdl_pars, NA)
 
       }else{
 
-        tmp <- optim(mdl_pars, obj_fxn, ec = ec)
+        if (!is.null(priorfunc)) {
+
+          tmp <- optim(mdl_pars, obj_fxn, ec = ec, priorfunc = priorfunc,
+                       prior = prior[i])
+
+        }else{
+
+          tmp <- optim(mdl_pars, obj_fxn, ec = ec)
+
+        }
+
+        converged <- tmp$convergence
+
+        new_pars <- tmp$par
+
+        return(list(new_pars, converged))
+
+        gc()
 
       }
-
-      converged <- tmp$convergence
-
-      new_pars <- tmp$par
-
-      return(list(new_pars, converged))
-
-      gc()
 
     }
 
@@ -971,22 +984,30 @@ fit_norm_model <- function(ecs, epi_mdl_func, epi_mdl_pars,
 
       mdl_pars <- unname(unlist(epi_mdl_pars[i,]))
 
-      if (!is.null(priorfunc)) {
+      if(length(ec) == 1 & ec[1] == 0){
 
-        tmp <- optim(mdl_pars, obj_fxn, ec = ec, priorfunc = priorfunc,
-                     prior = prior[i])
+        mod_res[[i]] <- list(mdl_pars, NA)
 
       }else{
 
-        tmp <- optim(mdl_pars, obj_fxn, ec = ec)
+        if (!is.null(priorfunc)) {
+
+          tmp <- optim(mdl_pars, obj_fxn, ec = ec, priorfunc = priorfunc,
+                       prior = prior[i])
+
+        }else{
+
+          tmp <- optim(mdl_pars, obj_fxn, ec = ec)
+
+        }
+
+        converged <- tmp$convergence
+
+        new_pars <- tmp$par
+
+        mod_res[[i]] <- list(new_pars, converged)
 
       }
-
-      converged <- tmp$convergence
-
-      new_pars <- tmp$par
-
-      mod_res[[i]] <- list(new_pars, converged)
 
     }
 
@@ -1060,28 +1081,36 @@ fit_epi_model <- function(ecs, N, epi_mdl_func, epi_mdl_pars,
       N2 <- N[i]
       mdl_pars <- unname(unlist(epi_mdl_pars[i,]))
 
-      if (!is.null(priorfunc)) {
+      if(length(ec) == 1 & ec[1] == 0){
 
-        tmp <- optim(mdl_pars, obj_fxn, ec = ec, N = N2, priorfunc = priorfunc,
-                     prior = prior[i], timestep = timestep)
+        mod_res[[i]] <- list(mdl_pars, NA)
 
       }else{
 
-        tmp <- optim(mdl_pars, obj_fxn, ec = ec, N = N2, timestep = timestep)
+        if (!is.null(priorfunc)) {
+
+          tmp <- optim(mdl_pars, obj_fxn, ec = ec, N = N2, priorfunc = priorfunc,
+                       prior = prior[i], timestep = timestep)
+
+        }else{
+
+          tmp <- optim(mdl_pars, obj_fxn, ec = ec, N = N2, timestep = timestep)
+
+        }
+
+        converged <- tmp$convergence
+
+        curves <- epi_mdl_func(N2, tmp$par[2:length(tmp$par)], timestep, tau + length(ec))
+
+        Kmech <- sum(as.data.frame(curves)$incident)
+
+        new_pars <- c(Kmech, tmp$par[2:length(tmp$par)])
+
+        return(list(new_pars, converged))
+
+        gc()
 
       }
-
-      converged <- tmp$convergence
-
-      curves <- epi_mdl_func(N2, tmp$par[2:length(tmp$par)], timestep, tau + length(ec))
-
-      Kmech <- sum(as.data.frame(curves)$incident)
-
-      new_pars <- c(Kmech, tmp$par[2:length(tmp$par)])
-
-      return(list(new_pars, converged))
-
-      gc()
 
     }
 
@@ -1097,26 +1126,34 @@ fit_epi_model <- function(ecs, N, epi_mdl_func, epi_mdl_pars,
       N2 <- N[i]
       mdl_pars <- unname(unlist(epi_mdl_pars[i,]))
 
-      if (!is.null(priorfunc)) {
+      if(length(ec) == 1 & ec[1] == 0){
 
-        tmp <- optim(mdl_pars, obj_fxn, ec = ec, N = N2, priorfunc = priorfunc,
-                     prior = prior[i], timestep = timestep)
+        mod_res[[i]] <- list(mdl_pars, NA)
 
       }else{
 
-        tmp <- optim(mdl_pars, obj_fxn, ec = ec, N = N2, timestep = timestep)
+        if (!is.null(priorfunc)) {
+
+          tmp <- optim(mdl_pars, obj_fxn, ec = ec, N = N2, priorfunc = priorfunc,
+                       prior = prior[i], timestep = timestep)
+
+        }else{
+
+          tmp <- optim(mdl_pars, obj_fxn, ec = ec, N = N2, timestep = timestep)
+
+        }
+
+        converged <- tmp$convergence
+
+        curves <- epi_mdl_func(N2, tmp$par[2:length(tmp$par)], timestep, tau + length(ec))
+
+        Kmech <- sum(as.data.frame(curves)$incident)
+
+        new_pars <- c(Kmech, tmp$par[2:length(tmp$par)])
+
+        mod_res[[i]] <- list(new_pars, converged)
 
       }
-
-      converged <- tmp$convergence
-
-      curves <- epi_mdl_func(N2, tmp$par[2:length(tmp$par)], timestep, tau + length(ec))
-
-      Kmech <- sum(as.data.frame(curves)$incident)
-
-      new_pars <- c(Kmech, tmp$par[2:length(tmp$par)])
-
-      mod_res[[i]] <- list(new_pars, converged)
 
     }
 
@@ -1146,19 +1183,15 @@ fit_epi_model <- function(ecs, N, epi_mdl_func, epi_mdl_pars,
 #'
 poisson_error <- function(ec, pred, estK) {
 
-  estK <- round(estK)
-
   if(estK == 0){
 
     estK <- 1
 
   }
 
-  ec[which(ec == 0)] <- 1
+  pred[which(pred <= 0.5 & ec > 0.5)] <- 1
 
-  pred[which(pred == 0)] <- 1
-
-  logprob <- sum(dpois(ec, pred, log = TRUE)) +
+  logprob <- sum(dpois(round(ec), round(pred), log = TRUE)) +
     dnorm(log10(estK), 0, 1, log = TRUE)
 
   return(logprob)
@@ -1182,20 +1215,16 @@ poisson_error <- function(ec, pred, estK) {
 #'
 poisson_error2 <- function(ec, pred, estK) {
 
-  estK <- round(estK)
-
   if(estK == 0){
 
-    estK <- 1
+    estK = 1
 
   }
 
-  ec[which(ec == 0)] <- 1
+  pred[which(pred <= 0.5 & ec > 0.5)] <- 1
 
-  pred[which(pred == 0)] <- 1
-
-  logprob <- sum(dpois(ec, pred, log = TRUE)) +
-    (dnorm(log10(estK), log10(sum(ec)), 1, log = TRUE)*100)
+  logprob <- sum(dpois(round(ec), round(pred), log = TRUE)) +
+    dnorm(log10(estK), log10(ifelse(sum(ec) > 0, sum(ec), 1)), 1, log = TRUE)
 
   return(logprob)
 
@@ -1217,15 +1246,13 @@ poisson_error2 <- function(ec, pred, estK) {
 #'
 poispen <- function(estK, prior) {
 
-  estK <- round(estK)
-
-  if(prior == 0){
+  if(estK > 0.5 & prior <= 0.5){
 
     prior <- 1
 
   }
 
-  penalty <- dpois(estK, prior, log = TRUE)
+  penalty <- dpois(round(estK), round(prior), log = TRUE)
 
   return(penalty)
 
@@ -1306,8 +1333,11 @@ norm_error2 <- function(ec, pred, estK){
 #' sqrtpen(estK = pars[1], prior = kstat[1])
 #'
 sqrtpen <- function(estK, prior) {
+
   penalty <- dnorm(sqrt(abs((estK) - prior)), 0, 1, log = TRUE)
+
   return(penalty)
+
 }
 
 ##
@@ -1325,8 +1355,11 @@ sqrtpen <- function(estK, prior) {
 #' sqrt_diffuse(estK = pars[1], prior = kstat[1])
 #'
 sqrtpen_diffuse <- function(estK, prior) {
+
   penalty <- dnorm(sqrt(abs((estK) - prior)), 0, 2, log = TRUE)
+
   return(penalty)
+
 }
 
 ##
@@ -1344,8 +1377,11 @@ sqrtpen_diffuse <- function(estK, prior) {
 #' normpen(estk = pars[1], prior = kstat[1])
 #'
 normpen <- function(estK, prior) {
+
   penalty <- dnorm((abs((estK) - prior)), 0, 1, log = TRUE)
+
   return(penalty)
+
 }
 
 ############################

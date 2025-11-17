@@ -10,6 +10,7 @@ em_func_model(
   pop_N,
   stat.model = "SL",
   epi.model = "gaussian",
+  library.SL = NULL,
   custom_model = NULL,
   starting_vals,
   error_func,
@@ -17,7 +18,7 @@ em_func_model(
   tau = NULL,
   timestep = NULL,
   stat.family = "gaussian",
-  threshold = 5,
+  threshold_pct = 0.05,
   max.iter = 100,
   epi.parallel = F,
   stat.parallel = F,
@@ -47,8 +48,6 @@ em_func_model(
 
 \item{stat.family}{A character object providing the error distribution family for the statistical model. The options are \code{"gaussian"} and \code{"poisson"}.}
 
-\item{threshold}{A numeric object providing a threshold for the iteration difference. The iteration difference is difference between the current iteration prediction and previous iteration prediction. Once this drops below the threshold among all locations, the iterative process will stop. The default is \code{20}}
-
 \item{max.iter}{A numeric object providing the maximum number of iterations that should be completed. If the threshold has not been met by this number of iterations, the iterative process will stop. The default is \code{100}}
 
 \item{epi.parallel}{A logical object indicating if the epidemic model should be run in parallel. The default is \code{FALSE}.}
@@ -58,6 +57,8 @@ em_func_model(
 \item{cores}{A numeric object providing the number of cores that should be assigned to run the function in parallel. If not running in parallel this can be left as the default \code{NULL}.}
 
 \item{penalty_func}{A function object providing the penalty calculation used to penalize the mechanistic model optimization towards the results from the statistical model.}
+
+\item{threshold}{A numeric object providing a threshold for the iteration difference. The iteration difference is difference between the current iteration prediction and previous iteration prediction. Once this drops below the threshold among all locations, the iterative process will stop. The default is \code{20}}
 }
 \value{
 A list object containing the following objects:
