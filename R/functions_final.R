@@ -664,7 +664,7 @@ em_func_model <- function(epi_curves, covdat, pop_N,
 
   prev_epi_mdl <- starting_vals
 
-  threshold <- median(obs * threshold_pct)
+  threshold <- pmax(median(obs * threshold_pct), 1)
 
   iter <- 0                   # initialize iter
   iter_diff <- 2 * threshold  # set iter_diff > threshold for first iter
@@ -913,7 +913,13 @@ fit_norm_model <- function(ecs, epi_mdl_func, epi_mdl_pars,
 
   obj_fxn <- function(pars, ec, priorfunc = NULL, prior = NULL) {
 
-    pred_curve <- round(epi_mdl_func(pars, length(ec)))
+    pred_curve <- epi_mdl_func(pars, length(ec))
+
+    if(pars[1] == 0){
+
+      pars[1] <- 1
+
+    }
 
     if(!is.null(priorfunc)) {
 
@@ -945,7 +951,9 @@ fit_norm_model <- function(ecs, epi_mdl_func, epi_mdl_pars,
 
       if(length(ec) == 1 & ec[1] == 0){
 
-        mod_res[[i]] <- list(mdl_pars, NA)
+        return(list(mdl_pars, NA))
+
+        gc()
 
       }else{
 
@@ -1055,6 +1063,12 @@ fit_epi_model <- function(ecs, N, epi_mdl_func, epi_mdl_pars,
 
     pred_curve <- epi_mdl_func(N, pars[2:length(pars)], timestep, (length(ec) - 1))
 
+    if(pars[1] == 0){
+
+      pars[1] <- 1
+
+    }
+
     if(!is.null(priorfunc)) {
 
       err <- error_func(ec, pred_curve$incident, pars[1]) +
@@ -1083,7 +1097,9 @@ fit_epi_model <- function(ecs, N, epi_mdl_func, epi_mdl_pars,
 
       if(length(ec) == 1 & ec[1] == 0){
 
-        mod_res[[i]] <- list(mdl_pars, NA)
+        return(list(mdl_pars, NA))
+
+        gc()
 
       }else{
 
@@ -1181,17 +1197,12 @@ fit_epi_model <- function(ecs, N, epi_mdl_func, epi_mdl_pars,
 #'
 #' poisson_error(ec = observed_cases, pred = model_cases, estK = params[1])
 #'
+#'
 poisson_error <- function(ec, pred, estK) {
 
-  if(estK == 0){
+  pred[which(pred < 1)] <- 1
 
-    estK <- 1
-
-  }
-
-  pred[which(pred <= 0.5 & ec > 0.5)] <- 1
-
-  logprob <- sum(dpois(round(ec), round(pred), log = TRUE)) +
+  logprob <- sum(dpois(ec, pred, log = TRUE)) +
     dnorm(log10(estK), 0, 1, log = TRUE)
 
   return(logprob)
@@ -1215,16 +1226,10 @@ poisson_error <- function(ec, pred, estK) {
 #'
 poisson_error2 <- function(ec, pred, estK) {
 
-  if(estK == 0){
+  pred[which(pred < 1)] <- 1
 
-    estK = 1
-
-  }
-
-  pred[which(pred <= 0.5 & ec > 0.5)] <- 1
-
-  logprob <- sum(dpois(round(ec), round(pred), log = TRUE)) +
-    dnorm(log10(estK), log10(ifelse(sum(ec) > 0, sum(ec), 1)), 1, log = TRUE)
+  logprob <- sum(dpois(ec, pred, log = TRUE)) +
+    dnorm(log10(estK), log10(sum(ec)), 1, log = TRUE)
 
   return(logprob)
 
@@ -1244,15 +1249,10 @@ poisson_error2 <- function(ec, pred, estK) {
 #'
 #' poispen(estK = params[1], prior = stat_result)
 #'
+#'
 poispen <- function(estK, prior) {
 
-  if(estK > 0.5 & prior <= 0.5){
-
-    prior <- 1
-
-  }
-
-  penalty <- dpois(round(estK), round(prior), log = TRUE)
+  penalty <- dpois(round(estK), prior, log = TRUE)
 
   return(penalty)
 

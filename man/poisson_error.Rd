@@ -23,4 +23,5 @@ Poisson error term
 
 poisson_error(ec = observed_cases, pred = model_cases, estK = params[1])
 
+
 }
