@@ -949,7 +949,7 @@ fit_norm_model <- function(ecs, epi_mdl_func, epi_mdl_pars,
 
       mdl_pars <- unname(unlist(epi_mdl_pars[i,]))
 
-      if(length(ec) == 1 & ec[1] == 0){
+      if(all(ec == 0)){
 
         return(list(mdl_pars, NA))
 
@@ -992,7 +992,7 @@ fit_norm_model <- function(ecs, epi_mdl_func, epi_mdl_pars,
 
       mdl_pars <- unname(unlist(epi_mdl_pars[i,]))
 
-      if(length(ec) == 1 & ec[1] == 0){
+      if(all(ec == 0)){
 
         mod_res[[i]] <- list(mdl_pars, NA)
 
@@ -1095,7 +1095,7 @@ fit_epi_model <- function(ecs, N, epi_mdl_func, epi_mdl_pars,
       N2 <- N[i]
       mdl_pars <- unname(unlist(epi_mdl_pars[i,]))
 
-      if(length(ec) == 1 & ec[1] == 0){
+      if(all(ec == 0)){
 
         return(list(mdl_pars, NA))
 
@@ -1142,7 +1142,7 @@ fit_epi_model <- function(ecs, N, epi_mdl_func, epi_mdl_pars,
       N2 <- N[i]
       mdl_pars <- unname(unlist(epi_mdl_pars[i,]))
 
-      if(length(ec) == 1 & ec[1] == 0){
+      if(all(ec == 0)){
 
         mod_res[[i]] <- list(mdl_pars, NA)
 
@@ -1252,7 +1252,9 @@ poisson_error2 <- function(ec, pred, estK) {
 #'
 poispen <- function(estK, prior) {
 
-  penalty <- dpois(round(estK), prior, log = TRUE)
+  prior[which(prior > 1)] <- 1
+
+  penalty <- dpois(round(estK), round(prior), log = TRUE)
 
   return(penalty)
 
