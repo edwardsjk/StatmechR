@@ -1252,7 +1252,7 @@ poisson_error2 <- function(ec, pred, estK) {
 #'
 poispen <- function(estK, prior) {
 
-  prior[which(prior > 1)] <- 1
+  prior[which(prior < 1)] <- 1
 
   penalty <- dpois(round(estK), round(prior), log = TRUE)
 
