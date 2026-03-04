@@ -1200,8 +1200,6 @@ fit_epi_model <- function(ecs, N, epi_mdl_func, epi_mdl_pars,
 #'
 poisson_error <- function(ec, pred, estK) {
 
-  pred[which(pred < 1)] <- 1
-
   logprob <- sum(dpois(ec, pred, log = TRUE)) +
     dnorm(log10(estK), 0, 1, log = TRUE)
 
@@ -1226,8 +1224,6 @@ poisson_error <- function(ec, pred, estK) {
 #'
 poisson_error2 <- function(ec, pred, estK) {
 
-  pred[which(pred < 1)] <- 1
-
   logprob <- sum(dpois(ec, pred, log = TRUE)) +
     dnorm(log10(estK), log10(sum(ec)), 1, log = TRUE)
 
@@ -1251,8 +1247,6 @@ poisson_error2 <- function(ec, pred, estK) {
 #'
 #'
 poispen <- function(estK, prior) {
-
-  prior[which(prior < 1)] <- 1
 
   penalty <- dpois(round(estK), round(prior), log = TRUE)
 
