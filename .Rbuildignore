@@ -4,3 +4,4 @@
 ^generate_vig_data$
 ^data-raw$
 ^old_funcs$
+^\.Rprofile$
