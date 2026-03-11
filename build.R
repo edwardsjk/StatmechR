@@ -14,21 +14,21 @@ devtools::install_dev_deps()
 setwd("/users/a/b/abagaels/StatMechR")
 document()
 
-usethis::use_build_ignore(c("build", "data-raw", "funcs_in_progress"), escape = T)
+usethis::use_build_ignore(c("build", "data-raw", "old_funcs"), escape = T)
 
 ## Add dependencies
 
-# packages <- c("dplyr", "lubridate", "ggplot2", "zoo", "doParallel", "foreach",
-#               "SuperLearner", "gam", "rpart", "randomForest", "e1071",
-#               "bartMachine", "stringr", "parallel")
-#
-# for(i in packages){
-#
-#   use_package(i, type = "Imports")
-#
-# }
-#
-# document()
+packages <- c("dplyr", "lubridate", "ggplot2", "zoo", "doParallel", "foreach",
+              "SuperLearner", "gam", "rpart", "randomForest", "e1071", "stringr",
+              "parallel")
+
+for(i in packages){
+
+  use_package(i, type = "Imports")
+
+}
+
+document()
 
 ## Add vignettes
 
