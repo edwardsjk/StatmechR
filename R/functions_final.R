@@ -915,12 +915,6 @@ fit_norm_model <- function(ecs, epi_mdl_func, epi_mdl_pars,
 
     pred_curve <- epi_mdl_func(pars, length(ec))
 
-    if(pars[1] == 0){
-
-      pars[1] <- 1
-
-    }
-
     if(!is.null(priorfunc)) {
 
       err <- error_func(ec, pred_curve, (pars[1])) +
