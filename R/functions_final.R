@@ -1061,22 +1061,18 @@ fit_epi_model <- function(ecs, N, epi_mdl_func, epi_mdl_pars,
 
   obj_fxn <- function(pars, ec, N, priorfunc = NULL, prior = NULL, timestep) {
 
-    pred_curve <- epi_mdl_func(N, pars[2:length(pars)], timestep, (length(ec) - 1))
+    pred_curve <- epi_mdl_func(N, pars, timestep, (length(ec) - 1))
 
-    if(pars[1] == 0){
-
-      pars[1] <- 1
-
-    }
+    estK <- sum(pred_curve$incident)
 
     if(!is.null(priorfunc)) {
 
-      err <- error_func(ec, pred_curve$incident, pars[1]) +
-        priorfunc((pars[1]), prior)
+      err <- error_func(ec, pred_curve$incident, estK) +
+        priorfunc(estK, prior)
 
     }else{
 
-      err <- error_func(ec, pred_curve$incident, pars[1])
+      err <- error_func(ec, pred_curve$incident, estK)
 
     }
 
@@ -1116,11 +1112,11 @@ fit_epi_model <- function(ecs, N, epi_mdl_func, epi_mdl_pars,
 
         converged <- tmp$convergence
 
-        curves <- epi_mdl_func(N2, tmp$par[2:length(tmp$par)], timestep, tau + length(ec))
+        curves <- epi_mdl_func(N2, tmp$par, timestep, tau + length(ec))
 
         Kmech <- sum(as.data.frame(curves)$incident)
 
-        new_pars <- c(Kmech, tmp$par[2:length(tmp$par)])
+        new_pars <- c(Kmech, tmp$par)
 
         return(list(new_pars, converged))
 
@@ -1161,11 +1157,11 @@ fit_epi_model <- function(ecs, N, epi_mdl_func, epi_mdl_pars,
 
         converged <- tmp$convergence
 
-        curves <- epi_mdl_func(N2, tmp$par[2:length(tmp$par)], timestep, tau + length(ec))
+        curves <- epi_mdl_func(N2, tmp$par, timestep, tau + length(ec))
 
         Kmech <- sum(as.data.frame(curves)$incident)
 
-        new_pars <- c(Kmech, tmp$par[2:length(tmp$par)])
+        new_pars <- c(Kmech, tmp$par)
 
         mod_res[[i]] <- list(new_pars, converged)
 
@@ -1248,6 +1244,8 @@ poisson_error2 <- function(ec, pred, estK) {
 #'
 poispen <- function(estK, prior) {
 
+  prior[which(prior == 0)] <- 1e-323
+
   penalty <- dpois(round(estK), round(prior), log = TRUE)
 
   return(penalty)
@@ -1270,12 +1268,6 @@ poispen <- function(estK, prior) {
 #' norm_error(ec = observed_cases, pred = model_cases, estK = params[1])
 #'
 norm_error <- function(ec, pred, estK){
-
-  if(estK == 0){
-
-    estK <- 1
-
-  }
 
   logprob <- sum(dnorm(ec, pred, 1, log = TRUE)) +
     dnorm(log10(estK), 0, 1, log = TRUE)
@@ -1300,12 +1292,6 @@ norm_error <- function(ec, pred, estK){
 #' norm_error2(ec = observed_cases, pred = model_cases, estK = params[1])
 #'
 norm_error2 <- function(ec, pred, estK){
-
-  if(estK == 0){
-
-    estK <- 1
-
-  }
 
   logprob <- sum(dnorm(ec, pred, 1, log = TRUE)) +
     dnorm(log10(estK), log10(ifelse(sum(ec) > 0, sum(ec), 1)), 1, log = TRUE)
