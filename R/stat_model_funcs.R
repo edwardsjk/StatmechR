@@ -1,12 +1,16 @@
 ## STAT MODEL FXNS ##
 
-#' Train a SuperLearner ensemble in parallel
+#' Train a SuperLearner ensemble
+#'
+#' @description
+#' `SL_fit()` trains a SuperLearner machine learning ensemble on outbreak data. There are options to define the library of algorithms and functionality to run in parallel using multiple cores.
 #'
 #' @param x A dataframe providing the variables for each location.
 #' @param y A numeric vector providing the outcome for each location.
-#' @param cores A numeric object providing the number of cores to be used in the parallel process. The defaultt value is `1`.
 #' @param family A character object providing the error distribution. Currenly only `gaussian` (the default) and `binomial` are supported.
-#' @param library.SL A list object indicating the SL algorithms and screeners to be used in the Superlearner. Using the option `NULL` which will use the default set of algorithms and screeners.
+#' @param library.SL A list object providing the SL algorithms and screeners to be used in the Superlearner. Using the option `NULL` which will use the default set of algorithms and screeners.
+#' @param parallel A logical object indicating whether the SuperLearner should be run in parallel. The default is `FALSE`.
+#' @param cores A numeric object providing the number of cores to be used in the parallel process. The default value is `NULL`.
 #'
 #' @return A `SuperLearner` object containing the trained model
 #'
@@ -20,143 +24,133 @@
 #'
 #' @examples
 #'
-#' stat.mdl.sl.fit.para(x = my_vars, y = epi_size,
-#'                      cores = 4, family = "gaussian")
+#' SL_fit(x = my_vars, y = epi_size, family = "gaussian",
+#'            library.SL = my_library, parallel = F, cores = NULL)
 #'
-stat.mdl.sl.fit.para <- function(x, y, cores = 1, family = "gaussian", library.SL = NULL) {
+SL_fit <- function(x,
+                   y,
+                   family = "gaussian",
+                   library.SL = NULL,
+                   parallel = F,
+                   cores = NULL) {
 
-  cluster = makeCluster(cores)
-  clusterEvalQ(cluster,
-               {library(SuperLearner)
-                 options(mc.cores = 1)})
-  clusterSetRNGStream(cluster, 1)
+  if(parallel == T){
 
-  if(is.null(library.SL)){
+    cluster = makeCluster(cores)
+    clusterEvalQ(cluster,
+                 {library(SuperLearner)
+                   options(mc.cores = 1)})
+    clusterSetRNGStream(cluster, 1)
 
-    if(family == "gaussian"){
+    if(is.null(library.SL)){
 
-      rc <- snowSuperLearner(X = x, Y = y, newX = x, family = "gaussian",
-                             cluster = cluster, cvControl = list(V = 10),
-                             SL.library = list(c("SL.rpart", "screen.glmnet"),
-                                               c("SL.glm", "screen.glmnet"),
-                                               c('SL.gam', "screen.glmnet"),
-                                               c("SL.glmnet", "screen.glmnet"),
-                                               c("SL.svm", "screen.glmnet"),
-                                               "SL.glmnet"))
+      if(family == "gaussian"){
 
-      stopCluster(cluster)
-      gc()
+        rc <- snowSuperLearner(X = x, Y = y, newX = x, family = "gaussian",
+                               cluster = cluster, cvControl = list(V = 10),
+                               SL.library = list("SL.rpart",
+                                                 "SL.glm",
+                                                 "SL.gam",
+                                                 "SL.glmnet",
+                                                 "SL.svm",
+                                                 "SL.glmnet"))
+
+        stopCluster(cluster)
+        gc()
+
+      }
+
+      if(family == "binomial"){
+
+        rc <- snowSuperLearner(X = x, Y = y, newX = x, family = "binomial",
+                               cluster = cluster, cvControl = list(V = 10),
+                               SL.library = list("SL.rpart",
+                                                 "SL.glm",
+                                                 "SL.gam",
+                                                 "SL.glmnet",
+                                                 "SL.svm",
+                                                 "SL.glmnet"))
+
+        stopCluster(cluster)
+        gc()
+      }
+
+    }else{
+
+      if(family == "gaussian"){
+
+        rc <- snowSuperLearner(X = x, Y = y, newX = x, family = "gaussian",
+                               cluster = cluster, cvControl = list(V = 10),
+                               SL.library = library.SL)
+
+        stopCluster(cluster)
+        gc()
+
+      }
+
+      if(family == "binomial"){
+
+        rc <- snowSuperLearner(X = x, Y = y, newX = x, family = "binomial",
+                               cluster = cluster, cvControl = list(V = 10),
+                               SL.library = library.SL)
+
+        stopCluster(cluster)
+        gc()
+
+      }
 
     }
 
-    if(family == "binomial"){
+  } else {
 
-      rc <- snowSuperLearner(X = x, Y = y, newX = x, family = "binomial",
-                             cluster = cluster, cvControl = list(V = 10),
-                             SL.library = list(c("SL.rpart", "screen.glmnet"),
-                                               c("SL.glm", "screen.glmnet"),
-                                               c('SL.gam', "screen.glmnet"),
-                                               c("SL.glmnet", "screen.glmnet"),
-                                               c("SL.svm", "screen.glmnet"),
-                                               "SL.glmnet"))
+    if(is.null(library.SL)){
 
-      stopCluster(cluster)
-      gc()
-    }
+      if(family == "gaussian"){
 
-  }else{
+        rc <- SuperLearner(X = x, Y = y, family = "gaussian",
+                           cvControl = list(V = 10),
+                           SL.library = list("SL.rpart",
+                                             "SL.glm",
+                                             "SL.gam",
+                                             "SL.glmnet",
+                                             "SL.svm",
+                                             "SL.glmnet"))
 
-    if(family == "gaussian"){
+      }
 
-      rc <- snowSuperLearner(X = x, Y = y, newX = x, family = "gaussian",
-                             cluster = cluster, cvControl = list(V = 10),
-                             SL.library = library.SL)
+      if(family == "binomial"){
 
-      stopCluster(cluster)
-      gc()
+        rc <- SuperLearner(X = x, Y = y, family = "binomial",
+                           cvControl = list(V = 10),
+                           SL.library = list("SL.rpart",
+                                             "SL.glm",
+                                             "SL.gam",
+                                             "SL.glmnet",
+                                             "SL.svm",
+                                             "SL.glmnet"))
 
-    }
+      }
 
-    if(family == "binomial"){
+    }else{
 
-      rc <- snowSuperLearner(X = x, Y = y, newX = x, family = "binomial",
-                             cluster = cluster, cvControl = list(V = 10),
-                             SL.library = library.SL)
+      if(family == "gaussian"){
 
-      stopCluster(cluster)
-      gc()
+        rc <- SuperLearner(X = x, Y = y, family = "gaussian",
+                           cvControl = list(V = 10),
+                           SL.library = library.SL)
 
-    }
+      }
 
-  }
+      if(family == "binomial"){
 
-  return(rc)
+        rc <- SuperLearner(X = x, Y = y, family = "binomial",
+                           cvControl = list(V = 10),
+                           SL.library = library.SL)
 
-}
+      }
 
-#' Train and fit a superlearner
-#'
-#' @param x A dataframe providing the variables for each location.
-#' @param y A numeric vector providing the outcome for each location.
-#' @param family A character object providing the error distribution. Currenly only `gaussian` (the default) and `poisson` are supported.
-#' @param library.SL A list object indicating the SL algorithms and screeners to be used in the Superlearner. Using the option `NULL` which will use the default set of algorithms and screeners.
-#'
-#' @return A `SuperLearner` object containing the trained model
-#'
-#' @importFrom SuperLearner SuperLearner
-#'
-#' @export
-#'
-#' @examples
-#'
-#' stat.mdl.sl.fit(x = my_vars, y = epi_size, family = "gaussian")
-#'
-stat.mdl.sl.fit <- function(x, y, family = "gaussian", library.SL = NULL) {
-
-  if(is.null(library.SL)){
-
-    if(family == "gaussian"){
-
-      rc <- SuperLearner(X = x, Y = y, family = "gaussian",
-                         cvControl = list(V = 10),
-                         SL.library = list(c("SL.rpart", "screen.glmnet"),
-                                           c("SL.glm", "screen.glmnet"),
-                                           c('SL.gam', "screen.glmnet"),
-                                           c("SL.svm", "screen.glmnet"),
-                                           "SL.glmnet"))
 
     }
-
-    if(family == "binomial"){
-
-      rc <- SuperLearner(X = x, Y = y, family = "binomial",
-                         cvControl = list(V = 10),
-                         SL.library = list(c("SL.rpart", "screen.glmnet"),
-                                           c("SL.glm", "screen.glmnet"),
-                                           c('SL.gam', "screen.glmnet"),
-                                           c("SL.svm", "screen.glmnet"),
-                                           "SL.glmnet"))
-
-    }
-
-  }else{
-
-    if(family == "gaussian"){
-
-      rc <- SuperLearner(X = x, Y = y, family = "gaussian",
-                         cvControl = list(V = 10),
-                         SL.library = library.SL)
-
-    }
-
-    if(family == "binomial"){
-
-      rc <- SuperLearner(X = x, Y = y, family = "binomial",
-                         cvControl = list(V = 10),
-                         SL.library = library.SL)
-
-    }
-
 
   }
 
@@ -165,6 +159,10 @@ stat.mdl.sl.fit <- function(x, y, family = "gaussian", library.SL = NULL) {
 }
 
 #' Predict final epidemic sizes using a trained SuperLearner
+#'
+#' @description
+#' `SL_pred()` predicts the final epidemic sizes for locations given a trained SuperLearner objected (generated by `SL_fit()`) and covariates to be input into the SuperLearner.
+#'
 #'
 #' @param mdl A `SuperLearner` object providing the trained ensemble model.
 #' @param x A dataframe providing the variables/features for each location.
@@ -175,9 +173,10 @@ stat.mdl.sl.fit <- function(x, y, family = "gaussian", library.SL = NULL) {
 #'
 #' @examples
 #'
-#' stat.mdl.sl.pred(mdl = SL_model, x = my_vars)
+#' SL_pred(mdl = SL_model, x = my_vars)
 #'
-stat.mdl.sl.pred <- function(mdl, x) {
+SL_pred <- function(mdl,
+                    x) {
 
   pred <- pmax(0, predict(mdl, onlySL = T, newdata = x)$pred)
 
@@ -185,29 +184,46 @@ stat.mdl.sl.pred <- function(mdl, x) {
 
 }
 
-#' Function for fitting a simple linear statistical model appropriate for
-#' passing in to em_func
+#' Fit a generalized linear model
 #'
-#' @param x the data frame of covariates to fit based on
-#' @param y outcome
-#' @return a fit model
+#' @description
+#' `linear_fit()` fits a generalized linear model based on location covariates and the observed cases at each location.
+#'
+#' @param x A data frame of covariates where each observation is a location
+#' @param y A numeric vector object providing the outcome
+#'
+#' @return A glm object containing the model fit
+#'
 #' @export
 #'
-stat.mdl.lin.fit <- function(x, y) {
+linear_fit <- function(x,
+                       y) {
+
   tmp <- data.frame(y = y, x)
+
   rc <- glm(as.formula(paste0("y ~", paste(names(x), collapse = "+"))), data = tmp, family = "gaussian")
+
   return(rc)
+
 }
 
-#'Function for doing the predict for doing the predict for the
-#' results from stat.mdl.lin.fit
+#' Predict epidemic size using a fitted glm model
 #'
-#' @param mdl the fit model
-#' @param x covariate matrix
-#' @return a vector of predicted final sizes
+#' @description
+#' `linear_pred()` predicts the final epidemic size for locations given a fitted glm model (generated using `linear_fit()`) and covariates to input into the model.
+#'
+#' @param mdl A glm object providing the model fit
+#' @param x A data frame providing the covariates for each location
+#'
+#' @return A vector of predicted final sizes
+#'
 #' @export
 #'
-stat.mdl.lin.pred <- function(mdl, x) {
+linear_pred <- function(mdl,
+                        x) {
+
   pred <- pmax(0, predict(mdl, newdata = x))
+
   return(pred)
+
 }

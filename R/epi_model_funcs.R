@@ -1,6 +1,10 @@
 ## EPI MODEL FXNS ##
 
-#' Simulate a Gaussian epidemic curve
+#' Simulate a an epidemic curve using a Gaussian distribution
+#'
+#' @description
+#' `gaussian_mod()` creates an epidemic curve using a Gaussian distribution, given the following parameters: i) the estimated epidemic size, ii) the estimated peak time of the epidemic, and iii) estimated spread of the epidemic; as well as the length of the epidemic.
+#'
 #'
 #' @param pars A vector providing, in order:
 #' - the estimated epidemic size
@@ -9,13 +13,15 @@
 #' @param times A numeric object providing the number of timesteps that the epidemic should be simulated for
 #'
 #' @return A vector of incidence values for each timestep
+#'
 #' @export
 #'
 #' @examples
 #'
-#' normmdl(pars = c(250, 15, 5), time = 30)
+#' gaussian_mod(pars = c(250, 15, 5), time = 30)
 #'
-normmdl <- function(pars, times) {
+gaussian_mod <- function(pars,
+                         times) {
 
   fs_i <- unname(unlist(pars[1]))
 
@@ -29,51 +35,59 @@ normmdl <- function(pars, times) {
   return(normpred)
 }
 
-#' Optimization of a gaussian epidemic model
+#' Fit a gaussian curve to epidemic data
+#'
+#' @description
+#' `run_gaussian_model()` fits a gaussian curve to epidemic data to estimate the final epidemic size, using general purpose optimization via `optim()`.
 #'
 #' @param ecs  A list object providing the observed or masked epidemic curves. Each element of the list object is a numeric vector.
-#' @param epi_mdl_func A function object providing the function used to simulate the mechanistic model.
-#' @param epi_mdl_pars A dataframe providing the parameter values for each parameter (columns) and location (rows).
-#' @param error_func A function object providing the error calculation for the optimization of the mechanistic model.
-#' @param priorfunc A function object providing the penalty calculation used to penalize the mechanistic model optimization towards the results from the statistical model.
+#' @param epi.mdl.pars A dataframe providing the parameter values for each parameter (columns) and location (rows).
+#' @param error.func A function object providing the error calculation for the optimization of the mechanistic model.
+#' @param prior.func A function object providing the penalty calculation used to penalize the mechanistic model optimization towards the results from the statistical model.
 #' @param prior A numeric vector providing the results from the statistical model that the `priorfunc` will penalize towards.
 #' @param cores A numeric object providing the number of cores that should be assigned to run the function in parallel. If not running in parallel this can be left as the default `NULL`.
+#' @param optim.method A character object providing the optimization method that should be used to fit the epi model to the data. Options are the same as those available in base R's `optim()`.
+#' @param optim.control A list object providing additional parameters to control the optimization. Options are the same as those available in base R's `opitm()`.
 #'
 #' @returns A list object consisting of, for each location:
 #'            - a dataframe with the updated parameter values
 #'            - a numeric object indicating whether the optimization
 #'              converged. A `0` indicates convergence.
 #'
+#' @import foreach
+#' @importFrom doParallel registerDoParallel
+#' @importFrom parallel makeCluster
+#' @importFrom parallel stopCluster
+#'
 #' @export
 #'
 #' @examples
 #'
-#' fit_norm_model(ecs = my_curves, epi_mdl_func = my_epi_model,
-#'                epi_mdl_pars = starting_values, error_func = norm_error,
-#'                prior_func = NULL, prior = NULL)
+#' run_gaussian_model(ecs = my_curves, epi_mdl_pars = starting_values,
+#'                    error_func = norm_error, prior_func = NULL,
+#'                    prior = NULL)
 #'
-fit_norm_model <- function(ecs, epi_mdl_func, epi_mdl_pars,
-                           error_func, priorfunc = NULL, prior = NULL,
-                           cores = NULL) {
+run_gaussian_model <- function(ecs,
+                               epi.mdl.pars,
+                               error.func,
+                               prior.func = NULL,
+                               prior = NULL,
+                               cores = NULL,
+                               optim.method = "Nelder-Mead",
+                               optim.control = NULL) {
 
-  obj_fxn <- function(pars, ec, priorfunc = NULL, prior = NULL) {
+  obj_fxn <- function(pars, ec, prior.func = NULL, prior = NULL) {
 
-    pred_curve <- epi_mdl_func(pars, length(ec))
+    pred_curve <- gaussian_mod(pars, length(ec))
 
-    if(pars[1] == 0){
+    if(!is.null(prior.func)) {
 
-      pars[1] <- 1
-
-    }
-
-    if(!is.null(priorfunc)) {
-
-      err <- error_func(ec, pred_curve, pars[1]) +
-        priorfunc(pars[1], prior)
+      err <- error.func(ec, pred_curve, pars[1]) +
+        prior.func(pars[1], prior)
 
     }else{
 
-      err <- error_func(ec, pred_curve, pars[1])
+      err <- error.func(ec, pred_curve, pars[1])
 
     }
 
@@ -92,7 +106,7 @@ fit_norm_model <- function(ecs, epi_mdl_func, epi_mdl_pars,
 
       ec <- ecs[[i]]
 
-      mdl_pars <- unname(unlist(epi_mdl_pars[i,]))
+      mdl_pars <- unname(unlist(epi.mdl.pars[i,]))
 
       if(all(ec == 0)){
 
@@ -102,14 +116,16 @@ fit_norm_model <- function(ecs, epi_mdl_func, epi_mdl_pars,
 
       }else{
 
-        if (!is.null(priorfunc)) {
+        if (!is.null(prior.func)) {
 
-          tmp <- optim(mdl_pars, obj_fxn, ec = ec, priorfunc = priorfunc,
-                       prior = prior[i])
+          tmp <- optim(mdl_pars, obj_fxn, ec = ec, prior.func = prior.func,
+                       prior = prior[i], method = optim.method,
+                       control = optim.control)
 
         }else{
 
-          tmp <- optim(mdl_pars, obj_fxn, ec = ec)
+          tmp <- optim(mdl_pars, obj_fxn, ec = ec, method = optim.method,
+                       control = optim.control)
 
         }
 
@@ -135,7 +151,7 @@ fit_norm_model <- function(ecs, epi_mdl_func, epi_mdl_pars,
 
       ec <- ecs[[i]]
 
-      mdl_pars <- unname(unlist(epi_mdl_pars[i,]))
+      mdl_pars <- unname(unlist(epi.mdl.pars[i,]))
 
       if(all(ec == 0)){
 
@@ -143,14 +159,16 @@ fit_norm_model <- function(ecs, epi_mdl_func, epi_mdl_pars,
 
       }else{
 
-        if (!is.null(priorfunc)) {
+        if (!is.null(prior.func)) {
 
-          tmp <- optim(mdl_pars, obj_fxn, ec = ec, priorfunc = priorfunc,
-                       prior = prior[i])
+          tmp <- optim(mdl_pars, obj_fxn, ec = ec, prior.func = prior.func,
+                       prior = prior[i], method = optim.method,
+                       control = optim.control)
 
         }else{
 
-          tmp <- optim(mdl_pars, obj_fxn, ec = ec)
+          tmp <- optim(mdl_pars, obj_fxn, ec = ec, method = optim.method,
+                       control = optim.control)
 
         }
 
@@ -170,19 +188,29 @@ fit_norm_model <- function(ecs, epi_mdl_func, epi_mdl_pars,
 
 }
 
-#' Optimization of a compartmental epidemic model
+#' Fit a custom epidemic model to epidemic data
+#'
+#' @description
+#' `run_custom_model()` fits a user defined custom epidemic model to epidemic data to predict final epidemic size, using general purpose optimization via `optim()`.
 #'
 #'
 #' @param ecs  A list object providing the observed or masked epidemic curves. Each element of the list object is a numeric vector.
 #' @param N A numeric vector providing the population size in each location.
-#' @param epi_mdl_func A function object providing the function used to simulate the mechanistic model.
-#' @param epi_mdl_pars A dataframe providing the parameter values for each parameter (columns) and location (rows).
-#' @param error_func A function object providing the error calculation for the optimization of the mechanistic model.
-#' @param priorfunc A function object providing the penalty calculation used to penalize the mechanistic model optimization towards the results from the statistical model.
-#' @param prior A numeric vector providing the results from the statistical model that the `priorfunc` will penalize towards.
+#' @param epi.mdl.func A function object providing the function used to simulate the mechanistic model.
+#' @param epi.mdl.pars A dataframe providing the parameter values for each parameter (columns) and location (rows).
+#' @param error.func A function object providing the error calculation for the optimization of the mechanistic model.
+#' @param prior.func A function object providing the penalty calculation used to penalize the mechanistic model optimization towards the results from the statistical model.
+#' @param prior A numeric vector providing the results from the statistical model that the `prior.func` will penalize towards.
 #' @param tau A character object providing the number of timesteps that should be simulated for the mechanistic model prediction.
 #' @param timestep A numeric object providng the number of days in each time step. For example, a weekly time step would be `timestep = 7`.
 #' @param cores A numeric object providing the number of cores that should be assigned to run the function in parallel. If not running in parallel this can be left as the default `NULL`.
+#' @param optim.method A character object providing the optimization method that should be used to fit the epi model to the data. Options are the same as those available in base R's `optim()`.
+#' @param optim.control A list object providing additional parameters to control the optimization. Options are the same as those available in base R's `opitm()`.
+#'
+#' @import foreach
+#' @importFrom doParallel registerDoParallel
+#' @importFrom parallel makeCluster
+#' @importFrom parallel stopCluster
 #'
 #' @returns A list object consisting of, for each location:
 #'            - a dataframe with the updated parameter values
@@ -193,37 +221,39 @@ fit_norm_model <- function(ecs, epi_mdl_func, epi_mdl_pars,
 #'
 #' @examples
 #'
-#'fit_epi_model(ecs = my_curves, epi_mdl_func = my_epi_model,
-#'              epi_mdl_pars = starting_values, error_func = norm_error,
-#'              prior_func = NULL, prior = NULL, cores = 1, tau = 70,
-#'              timestep = 7)
+#'run_custom_model(ecs = my_curves, epi.mdl.func = my_epi_model,
+#'                epi.mdl.pars = starting_values, error.func = norm_error,
+#'                prior.func = NULL, prior = NULL, tau = 70,
+#'                timestep = 7, cores = NULL, optim.method = "Nelder-Mead",
+#'                optim.control = list(maxit = 1000))
 #'
-fit_epi_model <- function(ecs, N, epi_mdl_func, epi_mdl_pars,
-                          error_func, priorfunc = NULL, prior = NULL,
-                          tau, timestep, cores = NULL) {
+run_custom_model <- function(ecs,
+                             N,
+                             epi.mdl.func,
+                             epi.mdl.pars,
+                             error.func,
+                             prior.func = NULL,
+                             prior = NULL,
+                             tau,
+                             timestep,
+                             cores = NULL,
+                             optim.method = "Nelder-Mead",
+                             optim.control = NULL) {
 
-  # obj_fxn <- function(pars, ec, N, estK, priorfunc = NULL, prior = NULL, timestep) {
+  obj_fxn <- function(pars, ec, N, prior.func = NULL, prior = NULL, timestep) {
 
-  obj_fxn <- function(pars, ec, N, priorfunc = NULL, prior = NULL, timestep) {
-
-    pred_curve <- epi_mdl_func(N, pars, timestep, (length(ec) - 1))
+    pred_curve <- epi.mdl.func(N, pars, timestep, (length(ec) - 1))
 
     estK <- sum(pred_curve$incident)
 
-    if(estK == 0){
+    if (!is.null(prior.func)) {
 
-      estK <- 1
+      err <- error.func(ec, pred_curve$incident, estK) +
+        prior.func(estK, prior)
 
-    }
+    } else {
 
-    if(!is.null(priorfunc)) {
-
-      err <- error_func(ec, pred_curve$incident, estK) +
-        priorfunc(estK, prior)
-
-    }else{
-
-      err <- error_func(ec, pred_curve$incident, estK)
+      err <- error.func(ec, pred_curve$incident, estK)
 
     }
 
@@ -231,32 +261,7 @@ fit_epi_model <- function(ecs, N, epi_mdl_func, epi_mdl_pars,
 
   }
 
-  # obj_fxn <- function(pars, ec, N, priorfunc = NULL, prior = NULL, timestep) {
-  #
-  #   pred_curve <- epi_mdl_func(N, pars[2:length(pars)], timestep, (length(ec) - 1))
-  #
-  #   if(pars[1] == 0){
-  #
-  #     pars[1] <- 1
-  #
-  #   }
-  #
-  #   if(!is.null(priorfunc)) {
-  #
-  #     err <- error_func(ec, pred_curve$incident, pars[1]) +
-  #       priorfunc((pars[1]), prior)
-  #
-  #   }else{
-  #
-  #     err <- error_func(ec, pred_curve$incident, pars[1])
-  #
-  #   }
-  #
-  #   return(-err)
-  #
-  # }
-
-  if(!is.null(cores)){
+  if (!is.null(cores)) {
 
     cluster <- makeCluster(cores)
     registerDoParallel(cluster)
@@ -265,38 +270,38 @@ fit_epi_model <- function(ecs, N, epi_mdl_func, epi_mdl_pars,
 
       ec <- ecs[[i]]
       N2 <- N[i]
-      mdl_pars <- unname(unlist(epi_mdl_pars[i,]))[-1]
+      mdl_pars <- unname(unlist(epi.mdl.pars[i, ]))[-1]
 
-      if(all(ec == 0)){
+      if (all(ec == 0)) {
 
         return(list(c(0, mdl_pars), NA, NA))
 
         gc()
 
-      }else{
+      } else {
 
-        if (!is.null(priorfunc)) {
+        if (!is.null(prior.func)) {
 
           tmp <- optim(mdl_pars, obj_fxn, ec = ec,
-                       N = N2, priorfunc = priorfunc,
+                       N = N2, prior.func = prior.func,
                        prior = prior[i],
                        timestep = timestep,
-                       #method = "SANN",
-                       control = list(maxit = 1000))
+                       method = optim.method,
+                       control = optim.control)
 
-        }else{
+        } else {
 
           tmp <- optim(par = mdl_pars, obj_fxn,
                        ec = ec, N = N2,
                        timestep = timestep,
-                       #method = "SANN",
-                       control = list(maxit = 1000))
+                       method = optim.method,
+                       control = optim.control)
 
         }
 
         converged <- tmp$convergence
 
-        curves <- epi_mdl_func(N2, tmp$par, timestep, tau + length(ec))$incident
+        curves <- epi.mdl.func(N2, tmp$par, timestep, tau + length(ec))$incident
 
         Kmech <- sum(curves)
 
@@ -320,7 +325,7 @@ fit_epi_model <- function(ecs, N, epi_mdl_func, epi_mdl_pars,
 
       ec <- ecs[[i]]
       N2 <- N[i]
-      mdl_pars <- unname(unlist(epi_mdl_pars[i,]))[-1]
+      mdl_pars <- unname(unlist(epi.mdl.pars[i, ]))[-1]
 
       if(all(ec == 0)){
 
@@ -328,27 +333,27 @@ fit_epi_model <- function(ecs, N, epi_mdl_func, epi_mdl_pars,
 
       }else{
 
-        if (!is.null(priorfunc)) {
+        if (!is.null(prior.func)) {
 
           tmp <- optim(mdl_pars, obj_fxn, ec = ec,
-                       N = N2, priorfunc = priorfunc,
+                       N = N2, prior.func = prior.func,
                        prior = prior[i],
                        timestep = timestep,
-                       #method = "SANN",
-                       control = list(maxit = 1000))
+                       method = optim.method,
+                       control = optim.control)
 
         }else{
 
           tmp <- optim(mdl_pars, obj_fxn, ec = ec,
                        N = N2, timestep = timestep,
-                       #method = "SANN",
-                       control = list(maxit = 1000))
+                       method = optim.method,
+                       control = optim.control)
 
         }
 
         converged <- tmp$convergence
 
-        curves <- epi_mdl_func(N2, tmp$par, timestep, tau + length(ec))$incident
+        curves <- epi.mdl.func(N2, tmp$par, timestep, tau + length(ec))$incident
 
         Kmech <- sum(curves)
 
@@ -367,9 +372,35 @@ fit_epi_model <- function(ecs, N, epi_mdl_func, epi_mdl_pars,
 }
 
 ##
-SIR_builder <- function(Sus.to.Inf = list("fitted"),
-                        Inf.to.Rec = list("fitted"),
-                        detection.prob = list("fixed", 1)){
+#' Build a simple SIR model
+#'
+#' @description
+#' `build_SIR()` builds a SIR model function that can be passed to `run_custom_model()` and `run_combined_model()`. The SIR model is a simple closed structure that gives the user the ability to fix or fit the parameter values.
+#'
+#'
+#' @param Sus.to.Inf A list object indicating the whether the beta transmission parameter should be `"fitted"` or `"fixed"`. If the beta transmission parameter is `"fixed"`, the second object in the list will be the numeric value of the parameter. If the beta transmission parameter is `"fitted"` no other objects are needed in the list.
+#' @param Inf.to.Rec A list object indicating the whether the recovery rate parameter should be `"fitted"` or `"fixed"`. If the recovery rate parameter is `"fixed"`, the second object in the list will be the numeric value of the parameter. If the recovery parameter is `"fitted"` no other objects are needed in the list.
+#' @param detection.prob A list object indicating the whether the detection probability parameter should be `"fitted"` or `"fixed"`. If the detection probability parameter is `"fixed"`, the second object in the list will be the numeric value of the parameter. If the detection probability parameter is `"fitted"` no other objects are needed in the list. The default value for the fixed detection probability is 1.
+#'
+#' @returns A function with the following arguments:
+#' -  N = the population size.
+#' -  pars = the initial starting values for the fitted parameters.
+#' -  time_step = the length of the timestep in the model.
+#' -  tau = the length of the simulation
+#'
+#' @importFrom dplyr bind_rows
+#'
+#' @export
+#'
+#' @examples
+#'
+#' build_SIR(Sus.to.Inf = list("fitted"),
+#'           Inf.to.Rec = list("fixed", 0.2),
+#'           detection.prob = list("fixed", 0.5))
+#'
+build_SIR <- function(Sus.to.Inf = list("fitted"),
+                      Inf.to.Rec = list("fitted"),
+                      detection.prob = list("fixed", 1)){
 
   function(N, pars, time_step, tau){
 
@@ -458,10 +489,38 @@ SIR_builder <- function(Sus.to.Inf = list("fitted"),
 
 ####
 
-SEIR_builder <- function(Sus.to.Exp = list("fitted"),
-                         Exp.to.Inf = list("fitted"),
-                         Inf.to.Rec = list("fitted"),
-                         detection.prob = list("fixed", 1)){
+#' Build a simple SEIR model
+#'
+#' @description
+#' `build_SEIR()` builds a SEIR model function that can be passed to `run_custom_model()` and `run_combined_model()`. The SEIR model is a simple closed structure that gives the user the ability to fix or fit the parameter values.
+#'
+#' @param Sus.to.Exp A list object indicating the whether the beta transmission parameter should be `"fitted"` or `"fixed"`. If the beta transmission parameter is `"fixed"`, the second object in the list will be the numeric value of the parameter. If the beta transmission parameter is `"fitted"` no other objects are needed in the list.
+#' @param Exp.to.Inf A list object indicating the whether the progression rate parameter should be `"fitted"` or `"fixed"`. If the progression rate parameter is `"fixed"`, the second object in the list will be the numeric value of the parameter. If the progression rate transmission parameter is `"fitted"` no other objects are needed in the list.
+#' @param Inf.to.Rec A list object indicating the whether the recovery rate parameter should be `"fitted"` or `"fixed"`. If the recovery rate parameter is `"fixed"`, the second object in the list will be the numeric value of the parameter. If the recovery rate parameter is `"fitted"` no other objects are needed in the list.
+#' @param detection.prob A list object indicating the whether the detection probability parameter should be `"fitted"` or `"fixed"`. If the detection probability parameter is `"fixed"`, the second object in the list will be the numeric value of the parameter. If the detection probability parameter is `"fitted"` no other objects are needed in the list. The default value for the fixed detection probability is 1.
+#'
+#' @returns A function with the following arguments:
+#' -  N = the population size.
+#' -  pars = the initial starting values for the fitted parameters.
+#' -  time_step = the length of the timestep in the model.
+#' -  tau = the length of the simulation
+#'
+#'
+#' @importFrom dplyr bind_rows
+#'
+#' @export
+#'
+#' @examples
+#'
+#' build_SEIR(Sus.to.Exp = list("fitted"),
+#'            Exp.to.Inf = list("fixed", 0.33),
+#'            Inf.to.Rec = list("fixed", 0.2),
+#'            detection.prob = list("fixed", 0.5))
+#'
+build_SEIR <- function(Sus.to.Exp = list("fitted"),
+                       Exp.to.Inf = list("fitted"),
+                       Inf.to.Rec = list("fitted"),
+                       detection.prob = list("fixed", 1)){
 
   function(N, pars, time_step, tau){
 

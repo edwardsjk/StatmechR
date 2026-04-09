@@ -1,49 +1,82 @@
 ## PLOT FXNS ##
 
-#' Plot the full epidemic curve
+#' Plot full epidemic curves
+#'
+#' @description
+#' `plot_true_curves()` plots the full epidemic curves from the data. Options to include or exclude a legend are available.
 #'
 #' @param dat A data frame providing the epidemic data over time for each location
 #' @param X A character object providing the column name for the x-axis variable. This should be a variable that is in a Date format.
-#' @param plot_group A character objecting providing the colunm name for the variable that the data will be grouped by
+#' @param plot.group A character objecting providing the colunm name for the variable that the data will be grouped by
 #' @param count A character object providing the column name for the count variable
 #' @param legend A logical object indicating whether a legend key should be shown. The default is `TRUE`
 #'
 #' @return A ggplot of the epidemic curves over the x-axis variable and grouped by the plot_group variable
 #'
 #' @importFrom stringr str_to_title
-#'
+#' @importFrom dplyr group_by
+#' @importFrom dplyr summarize
+#' @importFrom dplyr ungroup
 #' @import ggplot2
-#' @import dplyr
 #'
 #' @export
 #'
 #' @examples
 #'
-#'  plot_true_curves(dat = epidemic_data, X = "epiweek_date",
-#'                   plot_group = "district", count = "cases", legend = TRUE)
+#'  plot_true_curves(dat = epidemic_data,
+#'                   X = "epiweek_date",
+#'                   plot_group = "district",
+#'                   count = "cases", legend = TRUE)
 #'
-plot_true_curves <- function(dat, X, plot_group, count, legend = FALSE){
+plot_true_curves <- function(dat,
+                             X,
+                             plot.group,
+                             count,
+                             legend = FALSE){
 
-  names(dat)[which(names(dat) == plot_group)] <- "grouping"
+  rlang::check_required(dat)
+  rlang::check_required(X)
+  rlang::check_required(plot.group)
+  rlang::check_required(count)
 
-  names(dat)[which(names(dat) == X)] <- "xaxis"
+  check_empty(dat, "data.frame")
+  check_class(dat, "data.frame")
 
-  names(dat)[which(names(dat) == count)] <- "case_count"
+  X_expr          <- rlang::enexpr(X)
+  plot.group_expr <- rlang::enexpr(plot.group)
+  count_expr      <- rlang::enexpr(count)
+
+  check_single_col(X_expr,          arg = "X")
+  check_single_col(plot.group_expr, arg = "plot.group")
+  check_single_col(count_expr,      arg = "count")
+
+  X_name <- rlang::as_name(rlang::ensym(X))
+  plot.group_name <- rlang::as_name(rlang::ensym(plot.group))
+  count_name <- rlang::as_name(rlang::ensym(count))
+
+  check_contains_cols(X_name, dat, "X")
+  check_contains_cols(plot.group_name, dat, "plot.group")
+  check_contains_cols(count_name, dat, "count")
+
+  check_NAs(dat[[X_name]], arg = "X", threshold = "all")
+  check_NAs(dat[[count_name]], arg = "count", threshold = "all")
+
+  check_class(dat[[count_name]], "numeric", "count")
 
   plotdat <- dat |>
-    group_by(grouping, xaxis) |>
-    summarize(cases = sum(case_count)) |>
+    filter(!is.na({{count}})) |>
+    group_by(pick(c({{plot.group}}, {{X}}))) |>
+    summarize(cases = sum({{count}})) |>
     ungroup()
 
   if(legend == TRUE){
 
-    tplot <- ggplot(plotdat, aes(x = as.Date(x_axis), y = cases,
-                                 color = as.factor(grouping))) +
+    tplot <- ggplot(plotdat, aes(x = {{X}}, y = cases,
+                                 color = as.factor({{plot.group}}))) +
       geom_line() +
-      ylab("New cases") +
-      xlab("Date") +
-      labs(color = str_to_title(plot_group)) +
-      gtheme(axis.title.x = element_text(size = 20),
+      labs(x = "Date", y = "New cases",
+           color = rlang::as_name(rlang::ensym(plot.group))) +
+      theme(axis.title.x = element_text(size = 20),
              axis.title.y = element_text(size = 20),
              axis.text.x = element_text(size = 18),
              axis.text.y = element_text(size = 18),
@@ -53,11 +86,10 @@ plot_true_curves <- function(dat, X, plot_group, count, legend = FALSE){
   }else{
 
     tplot <- ggplot(data = plotdat,
-                    aes(x = as.Date(xaxis),y = cases,
-                        color = as.factor(grouping))) +
+                    aes(x = {{X}},y = cases,
+                        color = as.factor({{plot.group}}))) +
       geom_line() +
-      ylab("New cases") +
-      xlab("Date") +
+      labs(x = "Date", y = "New cases") +
       theme(axis.title.x = element_text(size = 20),
             axis.title.y = element_text(size = 20),
             axis.text.x = element_text(size = 18),
@@ -70,67 +102,111 @@ plot_true_curves <- function(dat, X, plot_group, count, legend = FALSE){
 
 }
 
-#' Plot the masked epidemic curves
+#' Plot masked epidemic curves
+#'
+#' @description
+#' `plot_mask_curves()` plots the masked curves of the epidemics, showing the curve up to the mask date in bold and the curve after the mask date in a faded/muted color. Options to include or exclude a legend are available.
 #'
 #' @param dat A data frame providing the full epidemic data over time for each location.
 #' @param maskdat A data frame providing the masked epidemic data over time for each location.
-#' @param X A character object providing the column name for the xaxis variable. This variable should be in Date format
-#' @param plot_group A character objecting providing the column name for the variable that the data will be grouped by.
+#' @param X A character object providing the column name for the x axis variable. This variable should be in Date format
+#' @param plot.group A character objecting providing the column name for the variable that the data will be grouped by.
 #' @param count A character object providing the column name for the count variable
 #' @param legend A logical object indicating whether a legend key should be shown. The default is `TRUE`.
 #'
 #' @return A ggplot of the masked epidemic curves over the x-axis variable and grouped by the plot_group variable.
 #'
-#' @import dplyr
-#' @import ggplot2
 #' @importFrom stringr str_to_title
+#' @importFrom dplyr group_by
+#' @importFrom dplyr ungroup
+#' @importFrom dplyr filter
+#' @import ggplot2
 #'
 #' @export
 #'
 #' @examples
 #'
-#' plot_true_curves(dat = epidemic_data, maskdat = masked_data,
-#'                  X = "epiweek_date", plot_group = "district", count = "cases",
+#' plot_mask_curves(dat = epidemic_data,
+#'                  maskdat = masked_data,
+#'                  X = "epiweek_date",
+#'                  plot_group = "district",
+#'                  count = "cases",
 #'                  legend = TRUE)
 #'
-plot_mask_curves <- function(dat, maskdat, X, plot_group, count, legend = FALSE){
+plot_mask_curves <- function(dat,
+                             maskdat,
+                             X,
+                             plot.group,
+                             count,
+                             legend = FALSE){
 
-  names(dat)[which(names(dat) == plot_group)] <- "grouping"
-  names(dat)[which(names(dat) == X)] <- "xaxis"
-  names(dat)[which(names(dat) == count)] <- "case_count"
+  rlang::check_required(dat)
+  rlang::check_required(maskdat)
+  rlang::check_required(X)
+  rlang::check_required(plot.group)
+  rlang::check_required(count)
 
-  names(maskdat)[which(names(maskdat) == plot_group)] <- "grouping"
-  names(maskdat)[which(names(maskdat) == X)] <- "xaxis"
-  names(maskdat)[which(names(maskdat) == count)] <- "case_count"
+  check_empty(dat, "data.frame")
+  check_empty(maskdat, "data.frame")
+  check_class(dat, "data.frame")
+  check_class(maskdat, "data.frame")
 
-  plotdat <- mask_dat |>
-    group_by(grouping, xaxis) |>
-    summarize(cases = sum(case_count)) |>
+  X_expr          <- rlang::enexpr(X)
+  plot.group_expr <- rlang::enexpr(plot.group)
+  count_expr      <- rlang::enexpr(count)
+
+  check_single_col(X_expr,          arg = "X")
+  check_single_col(plot.group_expr, arg = "plot.group")
+  check_single_col(count_expr,      arg = "count")
+
+  X_name <- rlang::as_name(rlang::ensym(X))
+  plot.group_name <- rlang::as_name(rlang::ensym(plot.group))
+  count_name <- rlang::as_name(rlang::ensym(count))
+
+  check_contains_cols(X_name, dat, "X")
+  check_contains_cols(X_name, maskdat, "X")
+  check_contains_cols(plot.group_name, dat, "plot.group")
+  check_contains_cols(plot.group_name, maskdat, "plot.group")
+  check_contains_cols(count_name, dat, "count")
+  check_contains_cols(count_name, maskdat, "count")
+
+  check_NAs(dat[[X_name]], arg = "X", threshold = "all")
+  check_NAs(dat[[count_name]], arg = "count", threshold = "all")
+  check_NAs(maskdat[[X_name]], arg = "X", threshold = "all")
+  check_NAs(maskdat[[count_name]], arg = "count", threshold = "all")
+
+  check_class(dat[[count_name]], "numeric", "count")
+  check_class(maskdat[[count_name]], "numeric", "count")
+
+  plotdat <- maskdat |>
+    filter(!is.na({{count}})) |>
+    group_by(pick({{plot.group}}, {{X}})) |>
+    summarize(cases = sum({{count}})) |>
     ungroup() |>
-    group_by(grouping) |>
+    group_by(pick({{plot.group}})) |>
     filter(cases > 0) |>
     ungroup()
 
   plotdat_all <- dat |>
-    group_by(grouping, xaxis) |>
-    summarize(cases = sum(case_count)) |>
+    filter(!is.na({{count}})) |>
+    group_by(pick({{plot.group}}, {{X}})) |>
+    summarize(cases = sum({{count}})) |>
     ungroup() |>
-    group_by(grouping) |>
+    group_by(pick({{plot.group}})) |>
     filter(cases > 0) |>
     ungroup()
 
   if(legend == TRUE){
 
     tplot <- ggplot() +
-      geom_line(aes(x = as.Date(xaxis),
-                    y = cases, color = as.factor(grouping)),
+      geom_line(aes(x = {{X}},
+                    y = cases, color = as.factor({{plot.group}})),
                 data = plotdat) +
-      geom_line(aes(x = as.Date(xaxis), y = cases,
-                    color = as.factor(grouping2)),
+      geom_line(aes(x = {{X}}, y = cases,
+                    color = as.factor({{plot.group}})),
                 data = plotdat_all, alpha = 0.2) +
-      ylab("New cases") +
-      xlab("Date") +
-      labs(lty = str_to_title(plot_group)) +
+      labs(x = "Date", y = "New cases",
+           lty = rlang::as_name(rlang::ensym(plot.group))) +
       theme(axis.title.x = element_text(size = 20),
             axis.title.y = element_text(size = 20),
             axis.text.x = element_text(size = 18),
@@ -141,14 +217,13 @@ plot_mask_curves <- function(dat, maskdat, X, plot_group, count, legend = FALSE)
   }else{
 
     tplot <- ggplot() +
-      geom_line(aes(x = as.Date(xaxis), y = cases,
-                    color = as.factor(grouping1)),
+      geom_line(aes(x = {{X}}, y = cases,
+                    color = as.factor({{plot.group}})),
                 data = plotdat) +
-      geom_line(aes(x = as.Date(xaxis), y = cases,
-                    color = as.factor(grouping)),
+      geom_line(aes(x = {{X}}, y = cases,
+                    color = as.factor({{plot.group}})),
                 data = plotdat_all, alpha = 0.2) +
-      ylab("New cases") +
-      xlab("Date") +
+      labs(x = "Date", y = "New cases") +
       theme(axis.title.x = element_text(size = 20),
             axis.title.y = element_text(size = 20),
             axis.text.x = element_text(size = 18),
@@ -162,35 +237,45 @@ plot_mask_curves <- function(dat, maskdat, X, plot_group, count, legend = FALSE)
 
 }
 
-#' Plot the bias curves for the combined model
+#' Plot bias curves for the combined model
+#'
+#' @description
+#' `plot_bias()` plots the error between the combined model's prediction and the true epidemic total at each iteration of the combined model. This allows the user to view changes in error and combined model performance over time.
 #'
 #' @param trueK A dataframe providing the true final epidemic sizes for each location
-#' @param iter_results A dataframe providing the combined model final size estimate for each location at each iteration of the combined model.
+#' @param iter.results A dataframe providing the combined model final size estimate for each location at each iteration of the combined model.
 #'
 #' @return A ggplot object of the bias curves over the iterations of the combined model
 #'
-#' @import dplyr
+#' @importFrom dplyr ungroup
+#' @importFrom dplyr mutate
+#' @importFrom tidyr pivot_longer
+#' @importFrom dplyr left_join
+#' @importFrom dplyr arrange
+#' @importFrom dplyr row_number
 #' @import ggplot2
 #'
 #' @export
 #'
 #' @examples
 #'
-#' plot_bias(trueK = true_final, iter_results = Khist)
+#' plot_bias(trueK = true_final,
+#'           iter_results = Khist)
 #'
-plot_bias <- function(trueK, iter_results){
+plot_bias <- function(trueK,
+                      iter.results){
 
-  locs <- trueK %>%
-    ungroup() %>%
+  locs <- trueK |>
+    ungroup() |>
     mutate(loc = row_number())
 
-  bias_df <- data.frame(iter_results) %>%
-    mutate(iter = as.numeric(row.names(.))) %>%
+  bias_df <- data.frame(iter_results) |>
+    mutate(iter = as.numeric(row.names(.))) |>
     pivot_longer(cols = -iter, names_to = "loc", values_to = "est",
-                 names_prefix = "X") %>%
-    mutate(loc = as.numeric(gsub("[^[:digit:]]", "", loc))) %>%
-    left_join(locs) %>%
-    mutate(bias = est - K)%>%
+                 names_prefix = "X") |>
+    mutate(loc = as.numeric(gsub("[^[:digit:]]", "", loc))) |>
+    left_join(locs) |>
+    mutate(bias = est - K) |>
     arrange(loc, iter)
 
   bias_plot <- ggplot() +
