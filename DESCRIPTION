@@ -17,7 +17,7 @@ Imports:
     ggplot2,
     lubridate,
     parallel,
-    randomForest,
+    doParallel,
     rpart,
     stringr,
     SuperLearner,
