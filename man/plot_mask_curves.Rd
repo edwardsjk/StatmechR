@@ -2,18 +2,18 @@
 % Please edit documentation in R/plot_funcs.R
 \name{plot_mask_curves}
 \alias{plot_mask_curves}
-\title{Plot the masked epidemic curves}
+\title{Plot masked epidemic curves}
 \usage{
-plot_mask_curves(dat, maskdat, X, plot_group, count, legend = FALSE)
+plot_mask_curves(dat, maskdat, X, plot.group, count, legend = FALSE)
 }
 \arguments{
 \item{dat}{A data frame providing the full epidemic data over time for each location.}
 
 \item{maskdat}{A data frame providing the masked epidemic data over time for each location.}
 
-\item{X}{A character object providing the column name for the xaxis variable. This variable should be in Date format}
+\item{X}{A character object providing the column name for the x axis variable. This variable should be in Date format}
 
-\item{plot_group}{A character objecting providing the column name for the variable that the data will be grouped by.}
+\item{plot.group}{A character objecting providing the column name for the variable that the data will be grouped by.}
 
 \item{count}{A character object providing the column name for the count variable}
 
@@ -23,12 +23,15 @@ plot_mask_curves(dat, maskdat, X, plot_group, count, legend = FALSE)
 A ggplot of the masked epidemic curves over the x-axis variable and grouped by the plot_group variable.
 }
 \description{
-Plot the masked epidemic curves
+\code{plot_mask_curves()} plots the masked curves of the epidemics, showing the curve up to the mask date in bold and the curve after the mask date in a faded/muted color. Options to include or exclude a legend are available.
 }
 \examples{
 
-plot_true_curves(dat = epidemic_data, maskdat = masked_data,
-                 X = "epiweek_date", plot_group = "district", count = "cases",
+plot_mask_curves(dat = epidemic_data,
+                 maskdat = masked_data,
+                 X = "epiweek_date",
+                 plot_group = "district",
+                 count = "cases",
                  legend = TRUE)
 
 }

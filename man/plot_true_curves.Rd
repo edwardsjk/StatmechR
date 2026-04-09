@@ -2,16 +2,16 @@
 % Please edit documentation in R/plot_funcs.R
 \name{plot_true_curves}
 \alias{plot_true_curves}
-\title{Plot the full epidemic curve}
+\title{Plot full epidemic curves}
 \usage{
-plot_true_curves(dat, X, plot_group, count, legend = FALSE)
+plot_true_curves(dat, X, plot.group, count, legend = FALSE)
 }
 \arguments{
 \item{dat}{A data frame providing the epidemic data over time for each location}
 
 \item{X}{A character object providing the column name for the x-axis variable. This should be a variable that is in a Date format.}
 
-\item{plot_group}{A character objecting providing the colunm name for the variable that the data will be grouped by}
+\item{plot.group}{A character objecting providing the colunm name for the variable that the data will be grouped by}
 
 \item{count}{A character object providing the column name for the count variable}
 
@@ -21,11 +21,13 @@ plot_true_curves(dat, X, plot_group, count, legend = FALSE)
 A ggplot of the epidemic curves over the x-axis variable and grouped by the plot_group variable
 }
 \description{
-Plot the full epidemic curve
+\code{plot_true_curves()} plots the full epidemic curves from the data. Options to include or exclude a legend are available.
 }
 \examples{
 
- plot_true_curves(dat = epidemic_data, X = "epiweek_date",
-                  plot_group = "district", count = "cases", legend = TRUE)
+ plot_true_curves(dat = epidemic_data,
+                  X = "epiweek_date",
+                  plot_group = "district",
+                  count = "cases", legend = TRUE)
 
 }
