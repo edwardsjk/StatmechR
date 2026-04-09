@@ -1,11 +1,14 @@
 #### PACKAGE DEVELOPMENT: STATMECHR ####
 
-library(devtools)
 library(roxygen2)
 library(testthat)
 library(knitr)
+library(checkmate)
+library(cli)
 
 #create_package("/users/a/b/abagaels/StatMechR")
+
+## ??
 
 devtools::dev_sitrep()
 devtools::update_packages("devtools")
@@ -14,7 +17,9 @@ devtools::install_dev_deps()
 setwd("/users/a/b/abagaels/StatMechR")
 document()
 
-usethis::use_build_ignore(c("build", "data-raw", "old_funcs"), escape = T)
+## Add build ignore file
+
+usethis::use_build_ignore(c("build", "data-raw", "old_funcs", ".Rprofile"), escape = T)
 
 ## Add dependencies
 
@@ -35,6 +40,9 @@ document()
 usethis::use_vignette("Vignette_1")
 
 
+## Check package
+
+devtools::check()
 
 
 
