@@ -8,6 +8,7 @@ SL_fit(
   x,
   y,
   family = "gaussian",
+  CV_folds = 10,
   library.SL = NULL,
   parallel = F,
   cores = NULL

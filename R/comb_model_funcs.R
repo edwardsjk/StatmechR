@@ -106,8 +106,6 @@ run_combined_model <- function(epi.curves,
 
     lastK[which(lastK < obs)] <- obs[which(lastK < obs)]
 
-    prev_epi_mdl[which(prev_epi_mdl[,1] < obs), 1] <- obs[which(prev_epi_mdl[,1] < obs)]
-
     if(iter == 1){
 
       if(epi.model == "gaussian"){
@@ -120,8 +118,8 @@ run_combined_model <- function(epi.curves,
                                           error.func = error.func,
                                           prior.func = NULL,
                                           prior = NULL,
-                                          optim.method,
-                                          optim.control)
+                                          optim.method = optim.method,
+                                          optim.control = optim.control)
 
         }else{
 
@@ -132,8 +130,8 @@ run_combined_model <- function(epi.curves,
                                           prior.func = NULL,
                                           prior = NULL,
                                           cores = cores,
-                                          optim.method,
-                                          optim.control)
+                                          optim.method = optim.method,
+                                          optim.control = optim.control)
 
         }
 
@@ -154,8 +152,8 @@ run_combined_model <- function(epi.curves,
                                         prior = NULL,
                                         tau = tau,
                                         timestep = timestep,
-                                        optim.method,
-                                        optim.control)
+                                        optim.method = optim.method,
+                                        optim.control = optim.control)
 
         }else{
 
@@ -169,8 +167,8 @@ run_combined_model <- function(epi.curves,
                                         cores = cores,
                                         tau = tau,
                                         timestep = timestep,
-                                        optim.method,
-                                        optim.control)
+                                        optim.method = optim.method,
+                                        optim.control = optim.control)
 
         }
 
@@ -188,8 +186,8 @@ run_combined_model <- function(epi.curves,
                                           error.func = error.func,
                                           prior.func = penalty.func,
                                           prior = lastK,
-                                          optim.method,
-                                          optim.control)
+                                          optim.method = optim.method,
+                                          optim.control = optim.control)
 
         }else{
 
@@ -200,16 +198,14 @@ run_combined_model <- function(epi.curves,
                                           prior.func = penalty.func,
                                           prior = lastK,
                                           cores = cores,
-                                          optim.method,
-                                          optim.control)
+                                          optim.method = optim.method,
+                                          optim.control = optim.control)
 
         }
 
       }
 
       if(epi.model == "custom"){
-
-        #prev_epi_mdl[, 2:ncol(prev_epi_mdl)] <- log(prev_epi_mdl[, -1])
 
         if(epi.parallel == FALSE){
 
@@ -222,8 +218,8 @@ run_combined_model <- function(epi.curves,
                                         prior = lastK,
                                         tau = tau,
                                         timestep = timestep,
-                                        optim.method,
-                                        optim.control)
+                                        optim.method = optim.method,
+                                        optim.control = optim.control)
 
         }else{
 
@@ -237,8 +233,8 @@ run_combined_model <- function(epi.curves,
                                         cores = cores,
                                         tau = tau,
                                         timestep = timestep,
-                                        optim.method,
-                                        optim.control)
+                                        optim.method = optim.method,
+                                        optim.control = optim.control)
 
         }
 
@@ -246,21 +242,16 @@ run_combined_model <- function(epi.curves,
 
     }
 
-    tmp <- lapply(fitepimdl, function(x) {x[[1]]})
+    tmp <- lapply(fitepimdl, function(x) {x[[2]]})
+    tmp_K <- lapply(fitepimdl, function(x) {x[[1]]})
 
     prev_epi_mdl <- as.data.frame(do.call(rbind, tmp))
 
-    # if(epi.model == "custom"){
-    #
-    #   prev_epi_mdl[, 2:ncol(prev_epi_mdl)] <- exp(abs(prev_epi_mdl[, -1]))
-    #
-    # }
-
-    Kmech[iter, ] <- prev_epi_mdl[, 1]
+    Kmech[iter, ] <- as.vector(do.call(rbind, tmp_K))
 
     ## Fit the statistical model on this iteration
 
-    Kmech2 <- Kmech[iter,] / (pop_N / 1000)
+    Kmech2 <- Kmech[iter,] / (pop.N / 1000)
 
     if(stat.model == "SL"){
 
@@ -270,7 +261,7 @@ run_combined_model <- function(epi.curves,
                              family = stat.family,
                              library.SL = library.SL)
 
-        K[iter, ] <- SL_pred(fitstatmdl, covdat) * (pop_N / 1000)
+        K[iter, ] <- SL_pred(fitstatmdl, covdat) * (pop.N / 1000)
 
 
       }else{
@@ -279,7 +270,7 @@ run_combined_model <- function(epi.curves,
                              cores = cores, family = stat.family,
                              library.SL = library.SL)
 
-        K[iter, ] <- SL_pred(fitstatmdl, covdat) * (pop_N / 1000)
+        K[iter, ] <- SL_pred(fitstatmdl, covdat) * (pop.N / 1000)
 
       }
 
@@ -289,7 +280,7 @@ run_combined_model <- function(epi.curves,
 
       fitstatmdl <- linear_fit(x = covdat, y = Kmech2)
 
-      K[iter, ] <- linear_pred(fitstatmdl, covdat) * (pop_N / 1000)
+      K[iter, ] <- linear_pred(fitstatmdl, covdat) * (pop.N / 1000)
 
     }
 
@@ -304,7 +295,7 @@ run_combined_model <- function(epi.curves,
 
   }
 
-  converged <- lapply(fitepimdl, function(x){x[[2]]})
+  converged <- lapply(fitepimdl, function(x){x[[3]]})
 
   return(list(K = K[iter, ],
               Kmech = Kmech[iter, ],

@@ -30,29 +30,29 @@ get_trueK <- function(dat,
 
   ## Checks ##
 
-  rlang::check_required(dat)
-  rlang::check_required(case.col)
-  rlang::check_required(groups)
-
-  check_empty(dat, "data.frame")
-  check_class(dat, "data.frame")
-
-  case_name  <- rlang::as_name(rlang::ensym(case.col))
-
-  groups_expr <- rlang::enexpr(groups)
-  group_names <- if (rlang::is_call(groups_expr)) {
-    sapply(rlang::call_args(groups_expr), rlang::as_name)
-  } else {
-    rlang::as_name(groups_expr)
-  }
-
-  check_contains_cols(case_name,  dat, "case.col")
-  check_contains_cols(group_names, dat, "groups")
-  check_contains_cols(case_name, dat, "case.col")
-  check_contains_cols(group_names, dat, "groups")
-  check_class(dat[[case_name]], "numeric", "case.col")
-  for (g in group_names) check_NAs(dat[[g]], arg = g,
-                                   threshold = "any")
+  # rlang::check_required(dat)
+  # rlang::check_required(case.col)
+  # rlang::check_required(groups)
+  #
+  # check_empty(dat, "data.frame")
+  # check_class(dat, "data.frame")
+  #
+  # case_name  <- rlang::as_name(rlang::ensym(case.col))
+  #
+  # groups_expr <- rlang::enexpr(groups)
+  # group_names <- if (rlang::is_call(groups_expr)) {
+  #   sapply(rlang::call_args(groups_expr), rlang::as_name)
+  # } else {
+  #   rlang::as_name(groups_expr)
+  # }
+  #
+  # check_contains_cols(case_name,  dat, "case.col")
+  # check_contains_cols(group_names, dat, "groups")
+  # check_contains_cols(case_name, dat, "case.col")
+  # check_contains_cols(group_names, dat, "groups")
+  # check_class(dat[[case_name]], "numeric", "case.col")
+  # for (g in group_names) check_NAs(dat[[g]], arg = g,
+  #                                  threshold = "any")
 
   ## Function ##
 

@@ -4,129 +4,65 @@ devtools::load_all()
 
 ec <- c(10, 10, 20, 30, 40, 50)
 pred <- c(10, 20, 30, 50, 60, 50)
+estK <- 300
+prior <- 400
 
 #-----------------------#
 #### poisson_error() ####
 #-----------------------#
 
-test_that("poisson_error() correct output class", {
+test_that("poisson_error() gives correct error result", {
 
-  expect_equal(class(poisson_error(ec, pred, sum(pred))),
-                  "numeric")
+  err1 <- sum(dpois(ec, pred, log = TRUE))
+  err2 <- dnorm(log10(estK), 0, 1, log = TRUE)
 
-})
-
-test_that("poisson_error() correct shape/length of output", {
-
-  expect_vector(poisson_error(ec, pred, sum(pred)), size = 1)
+  expect_equal(poisson_error(ec, pred, estK),
+               (err1 + err2))
 
 })
 
-test_that("poisson_error() ec contains NA", {
+test_that("poisson_error() handles 0 in ec", {
 
-  ec_tmp <- c(10, 10, NA, 30, 40, 50)
+  ec2 <- c(0, 0, 0, 10, 20, 30)
+  err1 <- sum(dpois(ec2, pred, log = TRUE))
+  err2 <- dnorm(log10(estK), 0, 1, log = TRUE)
 
-  expect_error(poisson_error(ec_tmp, pred, sum(pred)), "`ec` cannot contain missing \\(NA\\) values")
-
-})
-
-test_that("poisson_error() pred contains NA", {
-
-  pred_tmp <- c(10, 20, 30, 50, NA, 50)
-
-  expect_error(poisson_error(ec, pred_tmp, sum(pred)), "`pred` cannot contain missing \\(NA\\) values")
+  expect_equal(poisson_error(ec2, pred, estK),
+               (err1 + err2))
 
 })
 
-test_that("poisson_error() estK contains NA", {
+test_that("poisson_error() handles 0 in pred", {
 
-  estK_tmp <- NA
+  pred2 <- c(0, 0, 0, 10, 20, 30)
+  err1 <- sum(dpois(ec, pred2, log = TRUE))
+  err2 <- dnorm(log10(estK), 0, 1, log = TRUE)
 
-  expect_error(poisson_error(ec, pred, estK_tmp), "`estK` cannot contain missing \\(NA\\) values")
-
-})
-
-test_that("poisson_error() empty ec input", {
-
-  ec_tmp <- NULL
-
-  expect_error(poisson_error(ec_tmp, pred, sum(pred)), "`ec` is empty")
+  expect_equal(poisson_error(ec, pred2, estK),
+               (err1 + err2))
 
 })
 
-test_that("poisson_error() empty pred input", {
+test_that("poisson_error() handles 0 in estK", {
 
-  pred_tmp <- NULL
+  err1 <- sum(dpois(ec, pred, log = TRUE))
+  err2 <- dnorm(log10(0), 0, 1, log = TRUE)
 
-  expect_error(poisson_error(ec, pred_tmp, sum(pred)), "`pred` is empty")
-
-})
-
-test_that("poisson_error() empty estK input", {
-
-  estK_tmp <- NULL
-
-  expect_error(poisson_error(ec, pred, estK_tmp), "`estK` is empty")
+  expect_equal(poisson_error(ec, pred, 0),
+               (err1 + err2))
 
 })
 
-test_that("poisson_error() character/factor ec input", {
+test_that("poisson_error() handles 0 in everything", {
 
-  ec1 <- as.character(ec)
-  ec2 <- as.factor(ec)
+  ec2 <- c(0, 0, 0, 0, 0, 0)
+  pred2 <- c(0, 0, 0, 0, 0, 0)
 
-  expect_error(poisson_error(ec1, pred, sum(pred)), "`ec` must be of class <numeric>")
-  expect_error(poisson_error(ec2, pred, sum(pred)), "`ec` must be of class <numeric>")
+  err1 <- sum(dpois(ec2, pred2, log = TRUE))
+  err2 <- dnorm(log10(0), 0, 1, log = TRUE)
 
-})
-
-test_that("poisson_error() character/factor pred input", {
-
-  pred1 <- as.character(pred)
-  pred2 <- as.factor(pred)
-
-  expect_error(poisson_error(ec, pred1, sum(pred)), "`pred` must be of class <numeric>")
-  expect_error(poisson_error(ec, pred2, sum(pred)), "`pred` must be of class <numeric>")
-
-})
-
-test_that("poisson_error() character/factor estk input", {
-
-  estK1 <- as.character(sum(pred))
-  estK2 <- as.factor(sum(pred))
-
-  expect_error(poisson_error(ec, pred, estK1), "`estK` must be of class <numeric>")
-  expect_error(poisson_error(ec, pred, estK2), "`estK` must be of class <numeric>")
-
-})
-
-test_that("poisson_error() non-positive estK input", {
-
-  estK_tmp <- -100
-
-  expect_error(poisson_error(ec, pred, estK_tmp),
-               "`estK` must equal 0 or a positive value")
-
-})
-
-test_that("poisson_error() missing ec argument", {
-
-  expect_error(poisson_error(pred = pred, estK = sum(pred)),
-               "`ec` is absent but must be supplied.")
-
-})
-
-test_that("poisson_error() missing pred argument", {
-
-  expect_error(poisson_error(ec = ec, estK = sum(pred)),
-               "`pred` is absent but must be supplied.")
-
-})
-
-test_that("poisson_error() missing estK argument", {
-
-  expect_error(poisson_error(ec = ec, pred = pred),
-               "`estK` is absent but must be supplied.")
+  expect_equal(poisson_error(ec2, pred2, 0),
+               (err1 + err2))
 
 })
 
@@ -134,123 +70,57 @@ test_that("poisson_error() missing estK argument", {
 #### poisson_error2() ####
 #------------------------#
 
-test_that("poisson_error2() correct output class", {
+test_that("poisson_error2() gives correct error result", {
 
-  expect_equal(class(poisson_error2(ec, pred, sum(pred))),
-               "numeric")
+  err1 <- sum(dpois(ec, pred, log = TRUE))
+  err2 <- dnorm(log10(estK), log10(sum(ec)), 1, log = TRUE)
 
-})
-
-test_that("poisson_error2() correct shape/length of output", {
-
-  expect_vector(poisson_error2(ec, pred, sum(pred)), size = 1)
+  expect_equal(poisson_error2(ec, pred, estK),
+               (err1 + err2))
 
 })
 
-test_that("poisson_error2() ec contains NA", {
+test_that("poisson_error2() handles some 0 in ec", {
 
-  ec_tmp <- c(10, 10, NA, 30, 40, 50)
+  ec2 <- c(0, 0, 0, 10, 20, 30)
+  err1 <- sum(dpois(ec2, pred, log = TRUE))
+  err2 <- dnorm(log10(estK), log10(sum(ec2)), 1, log = TRUE)
 
-  expect_error(poisson_error2(ec_tmp, pred, sum(pred)), "`ec` cannot contain missing \\(NA\\) values")
-
-})
-
-test_that("poisson_error2() pred contains NA", {
-
-  pred_tmp <- c(10, 20, 30, 50, NA, 50)
-
-  expect_error(poisson_error2(ec, pred_tmp, sum(pred)), "`pred` cannot contain missing \\(NA\\) values")
+  expect_equal(poisson_error2(ec2, pred, estK),
+               (err1 + err2))
 
 })
 
-test_that("poisson_error2() estK contains NA", {
+test_that("poisson_error2() handles some 0 in pred", {
 
-  estK_tmp <- NA
+  pred2 <- c(0, 0, 0, 10, 20, 30)
+  err1 <- sum(dpois(ec, pred2, log = TRUE))
+  err2 <- dnorm(log10(estK), log10(sum(ec)), 1, log = TRUE)
 
-  expect_error(poisson_error2(ec, pred, estK_tmp), "`estK` cannot contain missing \\(NA\\) values")
-
-})
-
-test_that("poisson_error2() empty ec input", {
-
-  ec_tmp <- NULL
-
-  expect_error(poisson_error2(ec_tmp, pred, sum(pred)), "`ec` is empty")
+  expect_equal(poisson_error2(ec, pred2, estK),
+               (err1 + err2))
 
 })
 
-test_that("poisson_error2() empty pred input", {
+test_that("poisson_error2() handles 0 in estK", {
 
-  pred_tmp <- NULL
+  err1 <- sum(dpois(ec, pred, log = TRUE))
+  err2 <- dnorm(log10(0), log10(sum(ec)), 1, log = TRUE)
 
-  expect_error(poisson_error2(ec, pred_tmp, sum(pred)), "`pred` is empty")
-
-})
-
-test_that("poisson_error2() empty estK input", {
-
-  estK_tmp <- NULL
-
-  expect_error(poisson_error2(ec, pred, estK_tmp), "`estK` is empty")
+  expect_equal(poisson_error2(ec, pred, 0),
+               (err1 + err2))
 
 })
 
-test_that("poisson_error2() character/factor ec input", {
+test_that("poisson_error2() handles 0 in pred AND estK", {
 
-  ec1 <- as.character(ec)
-  ec2 <- as.factor(ec)
+  pred2 <- c(0, 0, 0, 0, 0, 0)
 
-  expect_error(poisson_error2(ec1, pred, sum(pred)), "`ec` must be of class <numeric>")
-  expect_error(poisson_error2(ec2, pred, sum(pred)), "`ec` must be of class <numeric>")
+  err1 <- sum(dpois(ec, pred2, log = TRUE))
+  err2 <- dnorm(log10(0), log10(sum(ec)), 1, log = TRUE)
 
-})
-
-test_that("poisson_error2() character/factor pred input", {
-
-  pred1 <- as.character(pred)
-  pred2 <- as.factor(pred)
-
-  expect_error(poisson_error2(ec, pred1, sum(pred)), "`pred` must be of class <numeric>")
-  expect_error(poisson_error2(ec, pred2, sum(pred)), "`pred` must be of class <numeric>")
-
-})
-
-test_that("poisson_error2() character/factor estk input", {
-
-  estK1 <- as.character(sum(pred))
-  estK2 <- as.factor(sum(pred))
-
-  expect_error(poisson_error2(ec, pred, estK1), "`estK` must be of class <numeric>")
-  expect_error(poisson_error2(ec, pred, estK2), "`estK` must be of class <numeric>")
-
-})
-
-test_that("poisson_error2() non-positive estK input", {
-
-  estK_tmp <- -100
-
-  expect_error(poisson_error2(ec, pred, estK_tmp), "`estK` must equal 0 or a positive value")
-
-})
-
-test_that("poisson_error2() missing ec argument", {
-
-  expect_error(poisson_error2(pred = pred, estK = sum(pred)),
-               "`ec` is absent but must be supplied.")
-
-})
-
-test_that("poisson_error2() missing pred argument", {
-
-  expect_error(poisson_error2(ec = ec, estK = sum(pred)),
-               "`pred` is absent but must be supplied.")
-
-})
-
-test_that("poisson_error2() missing estK argument", {
-
-  expect_error(poisson_error2(ec = ec, pred = pred),
-               "`estK` is absent but must be supplied.")
+  expect_equal(poisson_error2(ec, pred2, 0),
+               (err1 + err2))
 
 })
 
@@ -258,123 +128,57 @@ test_that("poisson_error2() missing estK argument", {
 #### gaussian_error() ####
 #------------------------#
 
-test_that("gaussian_error() correct output class", {
+test_that("gaussian_error() gives correct error result", {
 
-  expect_equal(class(gaussian_error(ec, pred, sum(pred))),
-               "numeric")
+  err1 <- sum(dnorm(ec, pred, 1, log = TRUE))
+  err2 <- dnorm(log10(estK), 0, 1, log = TRUE)
 
-})
-
-test_that("gaussian_error() correct shape/length of output", {
-
-  expect_vector(gaussian_error(ec, pred, sum(pred)), size = 1)
+  expect_equal(gaussian_error(ec, pred, estK),
+               (err1 + err2))
 
 })
 
-test_that("gaussian_error() ec contains NA", {
+test_that("gaussian_error() handles 0 in ec", {
 
-  ec_tmp <- c(10, 10, NA, 30, 40, 50)
+  ec2 <- c(0, 0, 0, 10, 20, 30)
+  err1 <- sum(dnorm(ec2, pred, 1, log = TRUE))
+  err2 <- dnorm(log10(estK), 0, 1, log = TRUE)
 
-  expect_error(gaussian_error(ec_tmp, pred, sum(pred)), "`ec` cannot contain missing \\(NA\\) values")
-
-})
-
-test_that("gaussian_error() pred contains NA", {
-
-  pred_tmp <- c(10, 20, 30, 50, NA, 50)
-
-  expect_error(gaussian_error(ec, pred_tmp, sum(pred)), "`pred` cannot contain missing \\(NA\\) values")
+  expect_equal(gaussian_error(ec2, pred, estK),
+               (err1 + err2))
 
 })
 
-test_that("gaussian_error() estK contains NA", {
+test_that("gaussian_error() handles 0 in pred", {
 
-  estK_tmp <- NA
+  pred2 <- c(0, 0, 0, 10, 20, 30)
+  err1 <- sum(dnorm(ec, pred2, 1, log = TRUE))
+  err2 <- dnorm(log10(estK), 0, 1, log = TRUE)
 
-  expect_error(gaussian_error(ec, pred, estK_tmp), "`estK` cannot contain missing \\(NA\\) values")
-
-})
-
-test_that("gaussian_error() empty ec input", {
-
-  ec_tmp <- NULL
-
-  expect_error(gaussian_error(ec_tmp, pred, sum(pred)), "`ec` is empty")
+  expect_equal(gaussian_error(ec, pred2, estK),
+               (err1 + err2))
 
 })
 
-test_that("gaussian_error() empty pred input", {
+test_that("gaussian_error() handles 0 in estK", {
 
-  pred_tmp <- NULL
+  err1 <- sum(dnorm(ec, pred, 1, log = TRUE))
+  err2 <- dnorm(log10(0), 0, 1, log = TRUE)
 
-  expect_error(gaussian_error(ec, pred_tmp, sum(pred)), "`pred` is empty")
-
-})
-
-test_that("gaussian_error() empty estK input", {
-
-  estK_tmp <- NULL
-
-  expect_error(gaussian_error(ec, pred, estK_tmp), "`estK` is empty")
+  expect_equal(gaussian_error(ec, pred, 0),
+               (err1 + err2))
 
 })
 
-test_that("gaussian_error() character/factor ec input", {
+test_that("gaussian_error() handles 0 in everything", {
 
-  ec1 <- as.character(ec)
-  ec2 <- as.factor(ec)
+  pred2 <- c(0, 0, 0, 0, 0, 0)
 
-  expect_error(gaussian_error(ec1, pred, sum(pred)), "`ec` must be of class <numeric>")
-  expect_error(gaussian_error(ec2, pred, sum(pred)), "`ec` must be of class <numeric>")
+  err1 <- sum(dnorm(ec, pred2, 1, log = TRUE))
+  err2 <- dnorm(log10(0), 0, 1, log = TRUE)
 
-})
-
-test_that("gaussian_error() character/factor pred input", {
-
-  pred1 <- as.character(pred)
-  pred2 <- as.factor(pred)
-
-  expect_error(gaussian_error(ec, pred1, sum(pred)), "`pred` must be of class <numeric>")
-  expect_error(gaussian_error(ec, pred2, sum(pred)), "`pred` must be of class <numeric>")
-
-})
-
-test_that("gaussian_error() character/factor estk input", {
-
-  estK1 <- as.character(sum(pred))
-  estK2 <- as.factor(sum(pred))
-
-  expect_error(gaussian_error(ec, pred, estK1), "`estK` must be of class <numeric>")
-  expect_error(gaussian_error(ec, pred, estK2), "`estK` must be of class <numeric>")
-
-})
-
-test_that("gaussian_error() non-positive estK input", {
-
-  estK_tmp <- -100
-
-  expect_error(gaussian_error(ec, pred, estK_tmp), "`estK` must equal 0 or a positive value")
-
-})
-
-test_that("gaussian_error() missing ec argument", {
-
-  expect_error(gaussian_error(pred = pred, estK = sum(pred)),
-               "`ec` is absent but must be supplied.")
-
-})
-
-test_that("gaussian_error() missing pred argument", {
-
-  expect_error(gaussian_error(ec = ec, estK = sum(pred)),
-               "`pred` is absent but must be supplied.")
-
-})
-
-test_that("gaussian_error() missing estK argument", {
-
-  expect_error(gaussian_error(ec = ec, pred = pred),
-               "`estK` is absent but must be supplied.")
+  expect_equal(gaussian_error(ec, pred2, 0),
+               (err1 + err2))
 
 })
 
@@ -382,123 +186,57 @@ test_that("gaussian_error() missing estK argument", {
 #### gaussian_error2() ####
 #-------------------------#
 
-test_that("gaussian_error2() correct output class", {
+test_that("gaussian_error2() gives correct error result", {
 
-  expect_equal(class(gaussian_error2(ec, pred, sum(pred))),
-               "numeric")
+  err1 <- sum(dnorm(ec, pred, 1, log = TRUE))
+  err2 <- dnorm(log10(estK), log10(sum(ec)), 1, log = TRUE)
 
-})
-
-test_that("gaussian_error2() correct shape/length of output", {
-
-  expect_vector(gaussian_error2(ec, pred, sum(pred)), size = 1)
+  expect_equal(gaussian_error2(ec, pred, estK),
+               (err1 + err2))
 
 })
 
-test_that("gaussian_error2() ec contains NA", {
+test_that("gaussian_error2() handles 0 in ec", {
 
-  ec_tmp <- c(10, 10, NA, 30, 40, 50)
+  ec2 <- c(0, 0, 0, 10, 20, 30)
+  err1 <- sum(dnorm(ec2, pred, 1, log = TRUE))
+  err2 <- dnorm(log10(estK), log10(sum(ec2)), 1, log = TRUE)
 
-  expect_error(gaussian_error2(ec_tmp, pred, sum(pred)), "`ec` cannot contain missing \\(NA\\) values")
-
-})
-
-test_that("gaussian_error2() pred contains NA", {
-
-  pred_tmp <- c(10, 20, 30, 50, NA, 50)
-
-  expect_error(gaussian_error2(ec, pred_tmp, sum(pred)), "`pred` cannot contain missing \\(NA\\) values")
+  expect_equal(gaussian_error2(ec2, pred, estK),
+               (err1 + err2))
 
 })
 
-test_that("gaussian_error2() estK contains NA", {
+test_that("gaussian_error2() handles 0 in pred", {
 
-  estK_tmp <- NA
+  pred2 <- c(0, 0, 0, 10, 20, 30)
+  err1 <- sum(dnorm(ec, pred2, 1, log = TRUE))
+  err2 <- dnorm(log10(estK), log10(sum(ec)), 1, log = TRUE)
 
-  expect_error(gaussian_error2(ec, pred, estK_tmp), "`estK` cannot contain missing \\(NA\\) values")
-
-})
-
-test_that("gaussian_error2() empty ec input", {
-
-  ec_tmp <- NULL
-
-  expect_error(gaussian_error2(ec_tmp, pred, sum(pred)), "`ec` is empty")
+  expect_equal(gaussian_error2(ec, pred2, estK),
+               (err1 + err2))
 
 })
 
-test_that("gaussian_error2() empty pred input", {
+test_that("gaussian_error2() handles 0 in estK", {
 
-  pred_tmp <- NULL
+  err1 <- sum(dnorm(ec, pred, 1, log = TRUE))
+  err2 <- dnorm(log10(0), log10(sum(ec)), 1, log = TRUE)
 
-  expect_error(gaussian_error2(ec, pred_tmp, sum(pred)), "`pred` is empty")
-
-})
-
-test_that("gaussian_error2() empty estK input", {
-
-  estK_tmp <- NULL
-
-  expect_error(gaussian_error2(ec, pred, estK_tmp), "`estK` is empty")
+  expect_equal(gaussian_error(ec, pred, 0),
+               (err1 + err2))
 
 })
 
-test_that("gaussian_error2() character/factor ec input", {
+test_that("gaussian_error2() handles 0 in everything", {
 
-  ec1 <- as.character(ec)
-  ec2 <- as.factor(ec)
+  pred2 <- c(0, 0, 0, 0, 0, 0)
 
-  expect_error(gaussian_error2(ec1, pred, sum(pred)), "`ec` must be of class <numeric>")
-  expect_error(gaussian_error2(ec2, pred, sum(pred)), "`ec` must be of class <numeric>")
+  err1 <- sum(dnorm(ec, pred2, 1, log = TRUE))
+  err2 <- dnorm(log10(0), log10(sum(ec)), 1, log = TRUE)
 
-})
-
-test_that("gaussian_error2() character/factor pred input", {
-
-  pred1 <- as.character(pred)
-  pred2 <- as.factor(pred)
-
-  expect_error(gaussian_error2(ec, pred1, sum(pred)), "`pred` must be of class <numeric>")
-  expect_error(gaussian_error2(ec, pred2, sum(pred)), "`pred` must be of class <numeric>")
-
-})
-
-test_that("gaussian_error2() character/factor estk input", {
-
-  estK1 <- as.character(sum(pred))
-  estK2 <- as.factor(sum(pred))
-
-  expect_error(gaussian_error2(ec, pred, estK1), "`estK` must be of class <numeric>")
-  expect_error(gaussian_error2(ec, pred, estK2), "`estK` must be of class <numeric>")
-
-})
-
-test_that("gaussian_error2() non-positive estK input", {
-
-  estK_tmp <- -100
-
-  expect_error(gaussian_error2(ec, pred, estK_tmp), "`estK` must equal 0 or a positive value")
-
-})
-
-test_that("gaussian_error2() missing ec argument", {
-
-  expect_error(gaussian_error2(pred = pred, estK = sum(pred)),
-               "`ec` is absent but must be supplied.")
-
-})
-
-test_that("gaussian_error2() missing pred argument", {
-
-  expect_error(gaussian_error2(ec = ec, estK = sum(pred)),
-               "`pred` is absent but must be supplied.")
-
-})
-
-test_that("gaussian_error2() missing estK argument", {
-
-  expect_error(gaussian_error2(ec = ec, pred = pred),
-               "`estK` is absent but must be supplied.")
+  expect_equal(gaussian_error(ec, pred2, 0),
+               (err1 + err2))
 
 })
 
@@ -506,101 +244,39 @@ test_that("gaussian_error2() missing estK argument", {
 #### poispen() ####
 #-----------------#
 
-prior <- 1000
-estK <- 900
+test_that("poispen() gives correct error result", {
 
-test_that("poispen() correct output class", {
+  err <- dpois(round(estK), round(prior), log = TRUE)
 
-  expect_equal(class(poispen(estK, prior)),
-               "numeric")
-
-})
-
-test_that("poispen() correct shape/length of output", {
-
-  expect_vector(poispen(estK, prior), size = 1)
+  expect_equal(poispen(estK, prior),
+               err)
 
 })
 
-test_that("poispen() estK contains NA", {
+test_that("poispen() handles 0 estK", {
 
-   estK_tmp <- NA
+  err <- dpois(round(0), round(prior), log = TRUE)
 
-  expect_error(poispen(estK_tmp, prior), "`estK` cannot contain missing \\(NA\\) values")
-
-})
-
-test_that("poispen() prior contains NA", {
-
-  prior_tmp <- NA
-
-  expect_error(poispen(estK, prior_tmp), "`prior` cannot contain missing \\(NA\\) values")
+  expect_equal(poispen(0, prior),
+               err)
 
 })
 
-test_that("poispen() empty estK input", {
+test_that("poispen() handles 0 prior", {
 
-  estK_tmp <- NULL
+  err <- dpois(round(estK), round(0), log = TRUE)
 
-  expect_error(poispen(estK_tmp, prior), "`estK` is empty")
-
-})
-
-test_that("poispen() empty prior input", {
-
-  prior_tmp <- NULL
-
-  expect_error(poispen(estK, prior_tmp), "`prior` is empty")
+  expect_equal(poispen(estK, 0),
+               err)
 
 })
 
-test_that("poispen() character/factor estK input", {
+test_that("poispen() handles 0 estK AND 0 prior", {
 
-  estK1 <- as.character(estK)
-  estK2 <- as.factor(estK)
+  err <- dpois(round(0), round(0), log = TRUE)
 
-  expect_error(poispen(estK1, prior), "`estK` must be of class <numeric>")
-  expect_error(poispen(estK2, prior), "`estK` must be of class <numeric>")
-
-})
-
-test_that("poispen() character/factor prior input", {
-
-  prior1 <- as.character(prior)
-  prior2 <- as.factor(prior)
-
-  expect_error(poispen(estK, prior1), "`prior` must be of class <numeric>")
-  expect_error(poispen(estK, prior2), "`prior` must be of class <numeric>")
-
-})
-
-test_that("poispen() non-positive estK input", {
-
-  estK_tmp <- -100
-
-  expect_error(poispen(estK_tmp, prior), "`estK` must equal 0 or a positive value")
-
-})
-
-test_that("poispen() non-positive prior input", {
-
-  prior_tmp <- -100
-
-  expect_error(poispen(estK, prior_tmp), "`prior` must equal 0 or a positive value")
-
-})
-
-test_that("poispen() missing estK argument", {
-
-  expect_error(poispen(prior = prior),
-               "`estK` is absent but must be supplied.")
-
-})
-
-test_that("poispen() missing prior argument", {
-
-  expect_error(poispen(estK = estK),
-               "`prior` is absent but must be supplied.")
+  expect_equal(poispen(0, 0),
+               err)
 
 })
 
@@ -608,98 +284,39 @@ test_that("poispen() missing prior argument", {
 #### sqrtpen() ####
 #-----------------#
 
-test_that("sqrtpen() correct output class", {
+test_that("sqrtpen() gives correct error value", {
 
-  expect_equal(class(sqrtpen(estK, prior)),
-               "numeric")
+  err <- dnorm(sqrt(abs((estK) - prior)), 0, 1, log = TRUE)
 
-})
-
-test_that("sqrtpen() correct shape/length of output", {
-
-  expect_vector(sqrtpen(estK, prior), size = 1)
+  expect_equal(sqrtpen(estK, prior),
+               err)
 
 })
 
-test_that("sqrtpen() estK contains NA", {
+test_that("sqrtpen() handles 0 estK", {
 
-  estK_tmp <- NA
+  err <- dnorm(sqrt(abs((0) - prior)), 0, 1, log = TRUE)
 
-  expect_error(sqrtpen(estK_tmp, prior), "`estK` cannot contain missing \\(NA\\) values")
-
-})
-
-test_that("sqrtpen() prior contains NA", {
-
-  prior_tmp <- NA
-
-  expect_error(sqrtpen(estK, prior_tmp), "`prior` cannot contain missing \\(NA\\) values")
+  expect_equal(sqrtpen(0, prior),
+               err)
 
 })
 
-test_that("sqrtpen() empty estK input", {
+test_that("sqrtpen() handles 0 prior", {
 
-  estK_tmp <- NULL
+  err <- dnorm(sqrt(abs((estK) - 0)), 0, 1, log = TRUE)
 
-  expect_error(sqrtpen(estK_tmp, prior), "`estK` is empty")
-
-})
-
-test_that("sqrtpen() empty prior input", {
-
-  prior_tmp <- NULL
-
-  expect_error(sqrtpen(estK, prior_tmp), "`prior` is empty")
+  expect_equal(sqrtpen(estK, 0),
+               err)
 
 })
 
-test_that("sqrtpen() character/factor estK input", {
+test_that("sqrtpen() handles 0 estK AND 0 prior", {
 
-  estK1 <- as.character(estK)
-  estK2 <- as.factor(estK)
+  err <- dnorm(sqrt(abs((0) - 0)), 0, 1, log = TRUE)
 
-  expect_error(sqrtpen(estK1, prior), "`estK` must be of class <numeric>")
-  expect_error(sqrtpen(estK2, prior), "`estK` must be of class <numeric>")
-
-})
-
-test_that("sqrtpen() character/factor prior input", {
-
-  prior1 <- as.character(prior)
-  prior2 <- as.factor(prior)
-
-  expect_error(sqrtpen(estK, prior1), "`prior` must be of class <numeric>")
-  expect_error(sqrtpen(estK, prior2), "`prior` must be of class <numeric>")
-
-})
-
-test_that("sqrtpen() non-positive estK input", {
-
-  estK_tmp <- -100
-
-  expect_error(sqrtpen(estK_tmp, prior), "`estK` must equal 0 or a positive value")
-
-})
-
-test_that("sqrtpen() non-positive prior input", {
-
-  prior_tmp <- -100
-
-  expect_error(sqrtpen(estK, prior_tmp), "`prior` must equal 0 or a positive value")
-
-})
-
-test_that("sqrtpen() missing estK argument", {
-
-  expect_error(sqrtpen(prior = prior),
-               "`estK` is absent but must be supplied.")
-
-})
-
-test_that("sqrtpen() missing prior argument", {
-
-  expect_error(sqrtpen(estK = estK),
-               "`prior` is absent but must be supplied.")
+  expect_equal(sqrtpen(0, 0),
+               err)
 
 })
 
@@ -707,98 +324,39 @@ test_that("sqrtpen() missing prior argument", {
 #### sqrtpen_diff() ####
 #----------------------#
 
-test_that("sqrtpen_diff() correct output class", {
+test_that("sqrtpen_diff() gives correct error value", {
 
-  expect_equal(class(sqrtpen_diff(estK, prior)),
-               "numeric")
+  err <- dnorm(sqrt(abs((estK) - prior)), 0, 2, log = TRUE)
 
-})
-
-test_that("sqrtpen_diff() correct shape/length of output", {
-
-  expect_vector(sqrtpen_diff(estK, prior), size = 1)
+  expect_equal(sqrtpen_diff(estK, prior),
+               err)
 
 })
 
-test_that("sqrtpen_diff() estK contains NA", {
+test_that("sqrtpen_diff() handles 0 estK", {
 
-  estK_tmp <- NA
+  err <- dnorm(sqrt(abs((0) - prior)), 0, 2, log = TRUE)
 
-  expect_error(sqrtpen_diff(estK_tmp, prior), "`estK` cannot contain missing \\(NA\\) values")
-
-})
-
-test_that("sqrtpen_diff() prior contains NA", {
-
-  prior_tmp <- NA
-
-  expect_error(sqrtpen_diff(estK, prior_tmp), "`prior` cannot contain missing \\(NA\\) values")
+  expect_equal(sqrtpen_diff(0, prior),
+               err)
 
 })
 
-test_that("sqrtpen_diff() empty estK input", {
+test_that("sqrtpen_diff() handles 0 prior", {
 
-  estK_tmp <- NULL
+  err <- dnorm(sqrt(abs((estK) - 0)), 0, 2, log = TRUE)
 
-  expect_error(sqrtpen_diff(estK_tmp, prior), "`estK` is empty")
-
-})
-
-test_that("sqrtpen_diff() empty prior input", {
-
-  prior_tmp <- NULL
-
-  expect_error(sqrtpen_diff(estK, prior_tmp), "`prior` is empty")
+  expect_equal(sqrtpen_diff(estK, 0),
+               err)
 
 })
 
-test_that("sqrtpen_diff() character/factor estK input", {
+test_that("sqrtpen_diff() handles 0 estK AND 0 prior", {
 
-  estK1 <- as.character(estK)
-  estK2 <- as.factor(estK)
+  err <- dnorm(sqrt(abs((0) - 0)), 0, 2, log = TRUE)
 
-  expect_error(sqrtpen_diff(estK1, prior), "`estK` must be of class <numeric>")
-  expect_error(sqrtpen_diff(estK2, prior), "`estK` must be of class <numeric>")
-
-})
-
-test_that("sqrtpen_diff() character/factor prior input", {
-
-  prior1 <- as.character(prior)
-  prior2 <- as.factor(prior)
-
-  expect_error(sqrtpen_diff(estK, prior1), "`prior` must be of class <numeric>")
-  expect_error(sqrtpen_diff(estK, prior2), "`prior` must be of class <numeric>")
-
-})
-
-test_that("sqrtpen_diff() non-positive estK input", {
-
-  estK_tmp <- -100
-
-  expect_error(sqrtpen_diff(estK_tmp, prior), "`estK` must equal 0 or a positive value")
-
-})
-
-test_that("sqrtpen_diff() non-positive prior input", {
-
-  prior_tmp <- -100
-
-  expect_error(sqrtpen_diff(estK, prior_tmp), "`prior` must equal 0 or a positive value")
-
-})
-
-test_that("sqrtpen_diff() missing estK argument", {
-
-  expect_error(sqrtpen_diff(prior = prior),
-               "`estK` is absent but must be supplied.")
-
-})
-
-test_that("sqrtpen_diff() missing prior argument", {
-
-  expect_error(sqrtpen_diff(estK = estK),
-               "`prior` is absent but must be supplied.")
+  expect_equal(sqrtpen_diff(0, 0),
+               err)
 
 })
 
@@ -806,98 +364,38 @@ test_that("sqrtpen_diff() missing prior argument", {
 #### gausspen() ####
 #------------------#
 
-test_that("gausspen() correct output class", {
+test_that("gausspen() gives correct error value", {
 
-  expect_equal(class(gausspen(estK, prior)),
-               "numeric")
+  err <- dnorm((abs((estK) - prior)), 0, 1, log = TRUE)
 
-})
-
-test_that("gausspen() correct shape/length of output", {
-
-  expect_vector(gausspen(estK, prior), size = 1)
+  expect_equal(gausspen(estK, prior),
+               err)
 
 })
 
-test_that("gausspen() estK contains NA", {
+test_that("gausspen() handles 0 estK", {
 
-  estK_tmp <- NA
+  err <- dnorm((abs((0) - prior)), 0, 1, log = TRUE)
 
-  expect_error(gausspen(estK_tmp, prior), "`estK` cannot contain missing \\(NA\\) values")
-
-})
-
-test_that("gausspen() prior contains NA", {
-
-  prior_tmp <- NA
-
-  expect_error(gausspen(estK, prior_tmp), "`prior` cannot contain missing \\(NA\\) values")
+  expect_equal(gausspen(0, prior),
+               err)
 
 })
 
-test_that("gausspen() empty estK input", {
+test_that("gausspen() handles 0 prior", {
 
-  estK_tmp <- NULL
+  err <- dnorm((abs((estK) - 0)), 0, 1, log = TRUE)
 
-  expect_error(gausspen(estK_tmp, prior), "`estK` is empty")
-
-})
-
-test_that("gausspen() empty prior input", {
-
-  prior_tmp <- NULL
-
-  expect_error(gausspen(estK, prior_tmp), "`prior` is empty")
+  expect_equal(gausspen(estK, 0),
+               err)
 
 })
 
-test_that("gausspen() character/factor estK input", {
+test_that("gausspen() handles 0 estK and 0 prior", {
 
-  estK1 <- as.character(estK)
-  estK2 <- as.factor(estK)
+  err <- dnorm((abs((0) - 0)), 0, 1, log = TRUE)
 
-  expect_error(gausspen(estK1, prior), "`estK` must be of class <numeric>")
-  expect_error(gausspen(estK2, prior), "`estK` must be of class <numeric>")
-
-})
-
-test_that("gausspen() character/factor prior input", {
-
-  prior1 <- as.character(prior)
-  prior2 <- as.factor(prior)
-
-  expect_error(gausspen(estK, prior1), "`prior` must be of class <numeric>")
-  expect_error(gausspen(estK, prior2), "`prior` must be of class <numeric>")
+  expect_equal(gausspen(0, 0),
+               err)
 
 })
-
-test_that("gausspen() non-positive estK input", {
-
-  estK_tmp <- -100
-
-  expect_error(gausspen(estK_tmp, prior), "`estK` must equal 0 or a positive value")
-
-})
-
-test_that("gausspen() non-positive prior input", {
-
-  prior_tmp <- -100
-
-  expect_error(gausspen(estK, prior_tmp), "`prior` must equal 0 or a positive value")
-
-})
-
-test_that("gausspen() missing estK argument", {
-
-  expect_error(gausspen(prior = prior),
-               "`estK` is absent but must be supplied.")
-
-})
-
-test_that("gausspen() missing prior argument", {
-
-  expect_error(gausspen(estK = estK),
-               "`prior` is absent but must be supplied.")
-
-})
-

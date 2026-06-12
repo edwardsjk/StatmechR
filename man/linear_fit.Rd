@@ -4,7 +4,7 @@
 \alias{linear_fit}
 \title{Fit a generalized linear model}
 \usage{
-linear_fit(x, y)
+linear_fit(x, y, stat.family = "gaussian")
 }
 \arguments{
 \item{x}{A data frame of covariates where each observation is a location}

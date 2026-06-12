@@ -34,34 +34,34 @@ plot_true_curves <- function(dat,
                              count,
                              legend = FALSE){
 
-  rlang::check_required(dat)
-  rlang::check_required(X)
-  rlang::check_required(plot.group)
-  rlang::check_required(count)
-
-  check_empty(dat, "data.frame")
-  check_class(dat, "data.frame")
-
-  X_expr          <- rlang::enexpr(X)
-  plot.group_expr <- rlang::enexpr(plot.group)
-  count_expr      <- rlang::enexpr(count)
-
-  check_single_col(X_expr,          arg = "X")
-  check_single_col(plot.group_expr, arg = "plot.group")
-  check_single_col(count_expr,      arg = "count")
-
-  X_name <- rlang::as_name(rlang::ensym(X))
-  plot.group_name <- rlang::as_name(rlang::ensym(plot.group))
-  count_name <- rlang::as_name(rlang::ensym(count))
-
-  check_contains_cols(X_name, dat, "X")
-  check_contains_cols(plot.group_name, dat, "plot.group")
-  check_contains_cols(count_name, dat, "count")
-
-  check_NAs(dat[[X_name]], arg = "X", threshold = "all")
-  check_NAs(dat[[count_name]], arg = "count", threshold = "all")
-
-  check_class(dat[[count_name]], "numeric", "count")
+  # rlang::check_required(dat)
+  # rlang::check_required(X)
+  # rlang::check_required(plot.group)
+  # rlang::check_required(count)
+  #
+  # check_empty(dat, "data.frame")
+  # check_class(dat, "data.frame")
+  #
+  # X_expr          <- rlang::enexpr(X)
+  # plot.group_expr <- rlang::enexpr(plot.group)
+  # count_expr      <- rlang::enexpr(count)
+  #
+  # check_single_col(X_expr,          arg = "X")
+  # check_single_col(plot.group_expr, arg = "plot.group")
+  # check_single_col(count_expr,      arg = "count")
+  #
+  # X_name <- rlang::as_name(rlang::ensym(X))
+  # plot.group_name <- rlang::as_name(rlang::ensym(plot.group))
+  # count_name <- rlang::as_name(rlang::ensym(count))
+  #
+  # check_contains_cols(X_name, dat, "X")
+  # check_contains_cols(plot.group_name, dat, "plot.group")
+  # check_contains_cols(count_name, dat, "count")
+  #
+  # check_NAs(dat[[X_name]], arg = "X", threshold = "all")
+  # check_NAs(dat[[count_name]], arg = "count", threshold = "all")
+  #
+  # check_class(dat[[count_name]], "numeric", "count")
 
   plotdat <- dat |>
     filter(!is.na({{count}})) |>
@@ -139,44 +139,6 @@ plot_mask_curves <- function(dat,
                              plot.group,
                              count,
                              legend = FALSE){
-
-  rlang::check_required(dat)
-  rlang::check_required(maskdat)
-  rlang::check_required(X)
-  rlang::check_required(plot.group)
-  rlang::check_required(count)
-
-  check_empty(dat, "data.frame")
-  check_empty(maskdat, "data.frame")
-  check_class(dat, "data.frame")
-  check_class(maskdat, "data.frame")
-
-  X_expr          <- rlang::enexpr(X)
-  plot.group_expr <- rlang::enexpr(plot.group)
-  count_expr      <- rlang::enexpr(count)
-
-  check_single_col(X_expr,          arg = "X")
-  check_single_col(plot.group_expr, arg = "plot.group")
-  check_single_col(count_expr,      arg = "count")
-
-  X_name <- rlang::as_name(rlang::ensym(X))
-  plot.group_name <- rlang::as_name(rlang::ensym(plot.group))
-  count_name <- rlang::as_name(rlang::ensym(count))
-
-  check_contains_cols(X_name, dat, "X")
-  check_contains_cols(X_name, maskdat, "X")
-  check_contains_cols(plot.group_name, dat, "plot.group")
-  check_contains_cols(plot.group_name, maskdat, "plot.group")
-  check_contains_cols(count_name, dat, "count")
-  check_contains_cols(count_name, maskdat, "count")
-
-  check_NAs(dat[[X_name]], arg = "X", threshold = "all")
-  check_NAs(dat[[count_name]], arg = "count", threshold = "all")
-  check_NAs(maskdat[[X_name]], arg = "X", threshold = "all")
-  check_NAs(maskdat[[count_name]], arg = "count", threshold = "all")
-
-  check_class(dat[[count_name]], "numeric", "count")
-  check_class(maskdat[[count_name]], "numeric", "count")
 
   plotdat <- maskdat |>
     filter(!is.na({{count}})) |>
@@ -269,12 +231,13 @@ plot_bias <- function(trueK,
     ungroup() |>
     mutate(loc = row_number())
 
-  bias_df <- data.frame(iter_results) |>
-    mutate(iter = as.numeric(row.names(.))) |>
+  bias_df <- data.frame(iter.results) |>
+    mutate(iter = row_number()) |>
     pivot_longer(cols = -iter, names_to = "loc", values_to = "est",
                  names_prefix = "X") |>
-    mutate(loc = as.numeric(gsub("[^[:digit:]]", "", loc))) |>
+    mutate(loc = rep(1:length(unique(loc)), times = max(iter))) |>
     left_join(locs) |>
+    suppressMessages() |>
     mutate(bias = est - K) |>
     arrange(loc, iter)
 

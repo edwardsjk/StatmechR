@@ -23,6 +23,12 @@
 gaussian_mod <- function(pars,
                          times) {
 
+  if(length(pars) != 3){
+
+    stop("gaussian_mod() requires 3 parameter values")
+
+  }
+
   fs_i <- unname(unlist(pars[1]))
 
   peaktime_i <- unname(unlist(pars[2]))
@@ -242,14 +248,16 @@ run_custom_model <- function(ecs,
 
   obj_fxn <- function(pars, ec, N, prior.func = NULL, prior = NULL, timestep) {
 
-    pred_curve <- epi.mdl.func(N, pars, timestep, (length(ec) - 1))
+    pred_curve <- epi.mdl.func(N, pars, timestep, (length(ec) + tau))
 
-    estK <- sum(pred_curve$incident)
+    estK <- sum(pred_curve$incident[1:length(ec)]) #compare current curve to fitted curve of same length
+
+    estK2 <- sum(pred_curve$incident) #compare prior to total predicted curve
 
     if (!is.null(prior.func)) {
 
       err <- error.func(ec, pred_curve$incident, estK) +
-        prior.func(estK, prior)
+        prior.func(estK2, prior)
 
     } else {
 
@@ -270,11 +278,11 @@ run_custom_model <- function(ecs,
 
       ec <- ecs[[i]]
       N2 <- N[i]
-      mdl_pars <- unname(unlist(epi.mdl.pars[i, ]))[-1]
+      mdl_pars <- unname(unlist(epi.mdl.pars[i, ]))
 
       if (all(ec == 0)) {
 
-        return(list(c(0, mdl_pars), NA, NA))
+        return(list(estK = 0, new_pars = mdl_pars, convergence = NA, curves = NA))
 
         gc()
 
@@ -305,9 +313,10 @@ run_custom_model <- function(ecs,
 
         Kmech <- sum(curves)
 
-        new_pars <- c(Kmech, tmp$par)
+        new_pars <- tmp$par
 
-        return(list(new_pars, converged, curves))
+        return(list(estK = Kmech, params = new_pars,
+                    convergence = converged, curves = curves))
 
         gc()
 
@@ -325,11 +334,11 @@ run_custom_model <- function(ecs,
 
       ec <- ecs[[i]]
       N2 <- N[i]
-      mdl_pars <- unname(unlist(epi.mdl.pars[i, ]))[-1]
+      mdl_pars <- unname(unlist(epi.mdl.pars[i, ]))
 
       if(all(ec == 0)){
 
-        mod_res[[i]] <- list(c(0, mdl_pars), NA, NA)
+        mod_res[[i]] <- list(estK = 0, params = mdl_pars, convergence = NA, curves = NA)
 
       }else{
 
@@ -357,9 +366,10 @@ run_custom_model <- function(ecs,
 
         Kmech <- sum(curves)
 
-        new_pars <- c(Kmech, tmp$par)
+        new_pars <- tmp$par
 
-        mod_res[[i]] <- list(new_pars, converged, curves)
+        mod_res[[i]] <- list(estK = Kmech, params = new_pars,
+                             convergence = converged, curves = curves)
 
       }
 

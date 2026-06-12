@@ -14,7 +14,7 @@
 #'
 #' @return A `SuperLearner` object containing the trained model
 #'
-#' @importFrom SuperLearner snowSuperLearner
+#' @import SuperLearner
 #' @importFrom parallel makeCluster
 #' @importFrom parallel clusterEvalQ
 #' @importFrom parallel clusterSetRNGStream
@@ -27,12 +27,15 @@
 #' SL_fit(x = my_vars, y = epi_size, family = "gaussian",
 #'            library.SL = my_library, parallel = F, cores = NULL)
 #'
+#'
+
 SL_fit <- function(x,
-                   y,
-                   family = "gaussian",
-                   library.SL = NULL,
-                   parallel = F,
-                   cores = NULL) {
+                    y,
+                    family = "gaussian",
+                    CV.control = list(V = 10),
+                    library.SL = NULL,
+                    parallel = F,
+                    cores = NULL) {
 
   if(parallel == T){
 
@@ -47,13 +50,12 @@ SL_fit <- function(x,
       if(family == "gaussian"){
 
         rc <- snowSuperLearner(X = x, Y = y, newX = x, family = "gaussian",
-                               cluster = cluster, cvControl = list(V = 10),
-                               SL.library = list("SL.rpart",
-                                                 "SL.glm",
-                                                 "SL.gam",
-                                                 "SL.glmnet",
-                                                 "SL.svm",
-                                                 "SL.glmnet"))
+                               cluster = cluster, cvControl = CV.control,
+                               SL.library = list(c("SL.rpart", "All"),
+                                                 c("SL.glm", "All"),
+                                                 c("SL.gam", "All"),
+                                                 c("SL.svm", "All"),
+                                                 c("SL.glmnet", "All")))
 
         stopCluster(cluster)
         gc()
@@ -63,13 +65,12 @@ SL_fit <- function(x,
       if(family == "binomial"){
 
         rc <- snowSuperLearner(X = x, Y = y, newX = x, family = "binomial",
-                               cluster = cluster, cvControl = list(V = 10),
-                               SL.library = list("SL.rpart",
-                                                 "SL.glm",
-                                                 "SL.gam",
-                                                 "SL.glmnet",
-                                                 "SL.svm",
-                                                 "SL.glmnet"))
+                               cluster = cluster, cvControl = CV.control,
+                               SL.library = list(c("SL.rpart", "All"),
+                                                 c("SL.glm", "All"),
+                                                 c("SL.gam", "All"),
+                                                 c("SL.svm", "All"),
+                                                 c("SL.glmnet", "All")))
 
         stopCluster(cluster)
         gc()
@@ -80,7 +81,7 @@ SL_fit <- function(x,
       if(family == "gaussian"){
 
         rc <- snowSuperLearner(X = x, Y = y, newX = x, family = "gaussian",
-                               cluster = cluster, cvControl = list(V = 10),
+                               cluster = cluster, cvControl = CV.control,
                                SL.library = library.SL)
 
         stopCluster(cluster)
@@ -91,7 +92,7 @@ SL_fit <- function(x,
       if(family == "binomial"){
 
         rc <- snowSuperLearner(X = x, Y = y, newX = x, family = "binomial",
-                               cluster = cluster, cvControl = list(V = 10),
+                               cluster = cluster, cvControl = CV.control,
                                SL.library = library.SL)
 
         stopCluster(cluster)
@@ -108,26 +109,24 @@ SL_fit <- function(x,
       if(family == "gaussian"){
 
         rc <- SuperLearner(X = x, Y = y, family = "gaussian",
-                           cvControl = list(V = 10),
-                           SL.library = list("SL.rpart",
-                                             "SL.glm",
-                                             "SL.gam",
-                                             "SL.glmnet",
-                                             "SL.svm",
-                                             "SL.glmnet"))
+                           cvControl = CV.control,
+                           SL.library = list(c("SL.rpart", "All"),
+                                             c("SL.glm", "All"),
+                                             c("SL.gam", "All"),
+                                             c("SL.svm", "All"),
+                                             c("SL.glmnet", "All")))
 
       }
 
       if(family == "binomial"){
 
         rc <- SuperLearner(X = x, Y = y, family = "binomial",
-                           cvControl = list(V = 10),
-                           SL.library = list("SL.rpart",
-                                             "SL.glm",
-                                             "SL.gam",
-                                             "SL.glmnet",
-                                             "SL.svm",
-                                             "SL.glmnet"))
+                           cvControl = CV.control,
+                           SL.library = list(c("SL.rpart", "All"),
+                                             c("SL.glm", "All"),
+                                             c("SL.gam", "All"),
+                                             c("SL.svm", "All"),
+                                             c("SL.glmnet", "All")))
 
       }
 
@@ -136,7 +135,7 @@ SL_fit <- function(x,
       if(family == "gaussian"){
 
         rc <- SuperLearner(X = x, Y = y, family = "gaussian",
-                           cvControl = list(V = 10),
+                           cvControl = CV.control,
                            SL.library = library.SL)
 
       }
@@ -144,7 +143,7 @@ SL_fit <- function(x,
       if(family == "binomial"){
 
         rc <- SuperLearner(X = x, Y = y, family = "binomial",
-                           cvControl = list(V = 10),
+                           cvControl = CV.control,
                            SL.library = library.SL)
 
       }
@@ -197,11 +196,12 @@ SL_pred <- function(mdl,
 #' @export
 #'
 linear_fit <- function(x,
-                       y) {
+                       y,
+                       stat.family = "gaussian") {
 
   tmp <- data.frame(y = y, x)
 
-  rc <- glm(as.formula(paste0("y ~", paste(names(x), collapse = "+"))), data = tmp, family = "gaussian")
+  rc <- glm(as.formula(paste0("y ~", paste(names(x), collapse = "+"))), data = tmp, family = stat.family)
 
   return(rc)
 
